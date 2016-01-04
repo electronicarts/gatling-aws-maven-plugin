@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (C) 2016 Electronic Arts Inc. All rights reserved. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<prerequisites>
+		<maven>3.0.0</maven>
+	</prerequisites>
+
+	<artifactId>maven-gatling-aws-example-loadtest-project</artifactId>
+	<groupId>com.ea.gatling.example</groupId>
+	<version>1.0.0-SNAPSHOT</version>
+	<name>Maven Gatling AWS Example load test project</name>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<gatling.version>2.1.7</gatling.version>
+		<gatling-plugin.version>2.1.7</gatling-plugin.version>
+		<gatling.skip>false</gatling.skip>
+		<!-- Information required to start EC2 instances and control them via SSH -->
+		<ssh.private.key>${user.home}/.ssh/loadtest-keypair.pem</ssh.private.key>
+		<ec2.key.pair.name>loadtest-keypair</ec2.key.pair.name>
+		<ec2.security.group>gatling-security-group</ec2.security.group>
+		<ec2.instance.count>1</ec2.instance.count>
+		<gatling.local.home>${project.basedir}/gatling/gatling-charts-highcharts-bundle-2.1.7/bin/gatling.sh</gatling.local.home>
+		<gatling.install.script>${project.basedir}/src/test/resources/install-gatling.sh</gatling.install.script>
+		<gatling.root>gatling-charts-highcharts-bundle-2.1.7</gatling.root>
+		<gatling.java.opts>-Xms1g -Xmx4g</gatling.java.opts>
+		<!-- Fully qualified name of the Gatling simulation and a name describing 
+			the test -->
+		<gatling.simulation>com.ea.gatling.example.Loadtest</gatling.simulation>
+		<gatling.test.name>Loadtest</gatling.test.name>
+		<!-- S3 integration settings -->
+		<s3.upload.enabled>true</s3.upload.enabled>
+		<s3.bucket>my-loadtest-result-bucket</s3.bucket>
+		<s3.subfolder>my-loadtest</s3.subfolder>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-library</artifactId>
+			<version>2.11.4</version>
+		</dependency>
+		<dependency>
+			<groupId>io.gatling.highcharts</groupId>
+			<artifactId>gatling-charts-highcharts</artifactId>
+			<version>${gatling.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	<build>
+		<sourceDirectory>src/test/scala</sourceDirectory>
+		<testSourceDirectory>src/test/scala</testSourceDirectory>
+		<plugins>
+			<!-- Required for running smaller Gatling simulations locally for debugging 
+				purposes -->
+			<plugin>
+				<groupId>io.gatling</groupId>
+				<artifactId>gatling-maven-plugin</artifactId>
+				<version>${gatling-plugin.version}</version>
+				<executions>
+					<execution>
+						<phase>compile</phase>
+						<goals>
+							<goal>execute</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<dataFolder>src/test/resources/data</dataFolder>
+					<resultsFolder>target/gatling/results</resultsFolder>
+					<simulationsFolder>src/test/scala</simulationsFolder>
+					<simulationClass>${gatling.simulation}</simulationClass>
+					<jvmArgs>
+						<!-- Enable this for debugging: -->
+						<!--jvmArg>-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=7000</jvmArg -->
+					</jvmArgs>
+				</configuration>
+			</plugin>
+			<!-- Required for running large scale Gatling simulations on EC2 instances -->
+			<plugin>
+				<groupId>com.ea.gatling</groupId>
+				<artifactId>gatling-aws-maven-plugin</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+				<configuration>
+					<simulationOptions>
+						<custom.simulation.option>some value</custom.simulation.option>
+					</simulationOptions>
+				</configuration>
+			</plugin>
+			<!-- Any additional plugins you might have -->
+		</plugins>
+	</build>
+</project>
