@@ -49,7 +49,7 @@ Make the following changes in AWS to allow the Gatling AWS Maven plugin to launc
 }
 ```
 
-This example policy is very permissive. Consider restricting it more depending on your needs.
+This example policy is very permissive. [Consider restricting it](http://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html) more depending on your needs.
 
 The plugin expects that the access/secret key are provided at runtime to interact with EC2 and S3. Please refer to the [AWS documentation](http://docs.aws.amazon.com/AWSSdkDocsJava/latest/DeveloperGuide/credentials.html) on how to provide the keys to an application. To use the plugin on Jenkins, we recommend setting up password parameters for both values. You can then inject both as environment variables or write them into a temporary `aws.properties` file.
 
