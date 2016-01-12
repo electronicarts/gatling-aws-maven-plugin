@@ -283,7 +283,7 @@ The main authors of the plugin are Yuriy Gapon and Ingo Jaeckel.
 
 # License
 
-Copyright (C) 2015 Electronic Arts Inc.  All rights reserved.
+Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
