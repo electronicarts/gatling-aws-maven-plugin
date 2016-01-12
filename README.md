@@ -1,5 +1,8 @@
 # Gatling AWS Maven Plugin
 
+[![Build Status](https://img.shields.io/travis/electronicarts/gatling-aws-maven-plugin.svg)](https://travis-ci.org/electronicarts/gatling-aws-maven-plugin)
+[![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/electronicarts/gatling-aws-maven-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
 The Gatling AWS Maven plugin takes the pain out of scaling up your Gatling tests. It runs your load test on a configurable number of EC2 instances, aggregates a single load test report, and uploads the results to S3. All EC2 instances are terminated at the end of the test to ensure you are only paying for what you need.
 
 # Getting Started
