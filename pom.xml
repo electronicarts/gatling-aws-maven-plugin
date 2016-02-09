@@ -78,8 +78,41 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-plugin</artifactId>
+                <version>1.9.4</version>
+                <configuration>
+                    <connectionType>developerConnection</connectionType>
+                    <scmVersion>master</scmVersion>
+                    <scmVersionType>branch</scmVersionType>
+                    <pushChanges>false</pushChanges>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <preparationGoals>clean verify</preparationGoals>
+                    <pushChanges>false</pushChanges>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+    <distributionManagement>
+        <repository>
+            <id>deployment</id>
+            <name>Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+    </distributionManagement>
+    <scm>
+        <connection>scm:git:ssh://git@github.com:electronicarts/gatling-aws-maven-plugin.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:electronicarts/gatling-aws-maven-plugin.git</developerConnection>
+        <url>scm:git:ssh://git@github.com:electronicarts/gatling-aws-maven-plugin.git</url>
+        <tag>gatlingaws-maven-plugin-1.0.0-SNAPSHOT</tag>
+    </scm>
     <reporting>
         <plugins>
             <plugin>
@@ -89,4 +122,5 @@
             </plugin>
         </plugins>
     </reporting>
+
 </project>
