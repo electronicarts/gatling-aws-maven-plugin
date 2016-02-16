@@ -144,7 +144,7 @@ rm -rf gatling-charts-highcharts-bundle-${GATLING_VERSION}/user-files/simulation
 
 `io.gatling:gatling-maven-plugin` will allow you to run `com.FooTest` locally for fast testing and troubleshooting. Consider enabling the JVM arguments for debugging. If you have seen your test fail remotely, this is a great way to quickly understand and fix problems on your local dev environment. Specify additional `<jvmArg>` elements to customize the heap size to allow you to run bigger tests locally.
 
-`com.ea.gatling:gatlingaws-maven-plugin` will allow you to run `com.FooTest` at scale on a cluster of EC2 instances based on the properties you configured above.
+`com.ea.gatling:gatling-aws-maven-plugin` will allow you to run `com.FooTest` at scale on a cluster of EC2 instances based on the properties you configured above.
 
 ```xml
   <build>
@@ -178,7 +178,7 @@ rm -rf gatling-charts-highcharts-bundle-${GATLING_VERSION}/user-files/simulation
       <!-- Required for running large scale Gatling simulations on EC2 instances -->
       <plugin>
         <groupId>com.ea.gatling</groupId>
-        <artifactId>gatlingaws-maven-plugin</artifactId>
+        <artifactId>gatling-aws-maven-plugin</artifactId>
         <version>0.23</version>
         <configuration>
           <simulationOptions>
@@ -205,7 +205,7 @@ To generate load from your local dev environment, run a normal `mvn clean instal
 
 ## Running tests remotely
 
-Use the `com.ea.gatling:gatlingaws-maven-plugin:execute` goal to launch EC2 instances to generate load. You will want to use this goal when integrating the Gatling AWS Maven plugin with Jenkins.
+Use the `com.ea.gatling:gatling-aws-maven-plugin:execute` goal to launch EC2 instances to generate load. You will want to use this goal when integrating the Gatling AWS Maven plugin with Jenkins.
 
 If your test has dependencies required to run, consider adding the `assembly:single` goal. This will assemble all of your dependencies in a single artifact which will be distributed to all load generators during the setup phase. A typical use case for this would be running a test which depends on POJOs or any other existing code from your client/server codebase which is represented by Maven artifacts.
 
@@ -217,7 +217,7 @@ Example:
     -Dgatling.simulationClass=com.FooTest \
     -Dgatling.skip=true -DskipTests       \
     clean install                         \
-    assembly:single com.ea.gatling:gatlingaws-maven-plugin:execute
+    assembly:single com.ea.gatling:gatling-aws-maven-plugin:execute
 
 This will spin up 3 c3.large instances and start the com.FooTest simulation on each instance.
 
