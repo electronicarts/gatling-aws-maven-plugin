@@ -21,6 +21,16 @@
             <url>http://opensource.org/licenses/BSD-3-Clause</url>
         </license>
     </licenses>
+    <developers>
+        <developer>
+            <name>Electronic Arts Inc</name>
+            <url>http://www.ea.com</url>
+        </developer>
+    </developers>
+    <organization>
+        <name>Electronic Arts Inc</name>
+        <url>http://www.ea.com</url>
+    </organization>
     <dependencies>
         <dependency>
             <groupId>com.amazonaws</groupId>
