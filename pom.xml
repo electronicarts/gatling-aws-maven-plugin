@@ -11,7 +11,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gatling.version>2.1.6</gatling.version>
         <gatling-plugin.version>2.1.6</gatling-plugin.version>
-        <aws.version>1.10.44</aws.version>
+        <aws.version>1.10.52</aws.version>
     </properties>
     <dependencies>
         <dependency>
