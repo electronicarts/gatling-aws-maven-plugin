@@ -15,6 +15,12 @@
         <gatling-plugin.version>2.1.6</gatling-plugin.version>
         <aws.version>1.10.52</aws.version>
     </properties>
+    <licenses>
+        <license>
+            <name>The BSD 3-Clause License</name>
+            <url>http://opensource.org/licenses/BSD-3-Clause</url>
+        </license>
+    </licenses>
     <dependencies>
         <dependency>
             <groupId>com.amazonaws</groupId>
