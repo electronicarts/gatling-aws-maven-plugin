@@ -5,6 +5,9 @@
     <artifactId>gatling-aws-maven-plugin</artifactId>
     <groupId>com.ea.gatling</groupId>
     <version>1.0.3-SNAPSHOT</version>
+    <name>Gatling AWS Maven Plugin</name>
+    <description>The Gatling AWS Maven plugin takes the pain out of scaling up your Gatling tests. It runs your load test on a configurable number of EC2 instances, aggregates a single load test report, and uploads the results to S3. All EC2 instances are terminated at the end of the test to ensure you are only paying for what you need.</description>
+    <url>https://github.com/electronicarts/gatling-aws-maven-plugin</url>
     <packaging>maven-plugin</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
