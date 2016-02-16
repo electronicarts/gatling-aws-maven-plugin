@@ -68,6 +68,18 @@
     <profiles>
         <profile>
             <id>release</id>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>deployment</id>
+                    <name>Snapshots</name>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                    <id>deployment</id>
+                    <name>Staging</name>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+                </repository>
+            </distributionManagement>
             <build>
                 <plugins>
                     <plugin>
@@ -108,13 +120,6 @@
             </build>
         </profile>
     </profiles>
-    <distributionManagement>
-        <repository>
-            <id>deployment</id>
-            <name>Releases</name>
-            <url>https://oss.sonatype.org/content/repositories/releases</url>
-        </repository>
-    </distributionManagement>
     <scm>
         <url>https://github.com/electronicarts/gatling-aws-maven-plugin</url>
         <connection>scm:git:https://github.com/electronicarts/gatling-aws-maven-plugin.git</connection>
