@@ -1,5 +1,7 @@
 # Gatling AWS Maven Plugin
 
+[![Join the chat at https://gitter.im/electronicarts/gatling-aws-maven-plugin](https://badges.gitter.im/electronicarts/gatling-aws-maven-plugin.svg)](https://gitter.im/electronicarts/gatling-aws-maven-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Build Status](https://img.shields.io/travis/electronicarts/gatling-aws-maven-plugin.svg)](https://travis-ci.org/electronicarts/gatling-aws-maven-plugin)
 [![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/electronicarts/gatling-aws-maven-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
