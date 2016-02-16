@@ -118,8 +118,8 @@
     </distributionManagement>
     <scm>
         <url>https://github.com/electronicarts/gatling-aws-maven-plugin</url>
-        <connection>scm:git:git://git@github.com:electronicarts/gatling-aws-maven-plugin.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com:electronicarts/gatling-aws-maven-plugin.git</developerConnection>
+        <connection>scm:git:https://github.com/electronicarts/gatling-aws-maven-plugin.git</connection>
+        <developerConnection>scm:git:https://github.com/electronicarts/gatling-aws-maven-plugin.git</developerConnection>
     </scm>
     <reporting>
         <plugins>
