@@ -84,7 +84,7 @@
 			<plugin>
 				<groupId>com.ea.gatling</groupId>
 				<artifactId>gatling-aws-maven-plugin</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
+				<version>1.0.3</version>
 				<configuration>
 					<simulationOptions>
 						<custom.simulation.option>some value</custom.simulation.option>
