@@ -223,25 +223,26 @@ This will spin up 3 c3.large instances and start the com.FooTest simulation on e
 
 ## Maven properties
 
-| Name | Default | Description | Example |
-|------|---------|-------------|---------|
-| ec2.instance.count | 1 | Number of instances that will be launched | 2 |
-| ec2.instance.type | m3.medium | Type of the EC2 instances that will be launched | m3.medium |
-| ec2.ami.id | ami-b66ed3de |  |  |
-| ec2.key.pair.name | gatling-key-pair |  |  |
-| ec2.security.group | gatling-security-group |  |  |
-| ssh.private.key | ${user.home}/gatling-private-key.pem |  |  |
-| gatling.install.script | ${project.basedir}/src/test/resources/scripts/install-gatling.sh | Path to the script used to install Gatling on each load generator and configure the instance accordingly. |  |
-| gatling.simulation | Simulation | Fully qualified class name of the Gatling simulation that will be executed on each load generator |  |
-| gatling.test.name | (empty) | Short description of the test that is going to run. |  |
-| path.config.file | ${project.basedir}/src/test/resources/config.properties | Path to your tests configuration file. |  |
-| gatling.local.results |  |  |  |
-| gatling.local.home |  |  |  |
-| gatling.root | gatling-charts-highcharts-bundle-2.1.4 | The name of the gatling root directory on the load generator instances. Update this if your installation script is installing a custom version of Gatling resulting in a different folder name. |  |
-| gatling.java.opts | -Xms1g -Xmx6g | Any additional JVM arguments you want to pass through to Gatling. Use this to increase the heap space, open ports for debugging, set environment variables, etc. |  |
-| s3.upload.enabled | false | Enable or disable the upload of the final report to S3. |  |
-| s3.bucket | loadtest-results | Name of the S3 bucket that the load test results will be uploaded to. |  |
-| s3.subfolder | (empty string) | Name of the subfolder within ${s3.bucket} to which the load test results will be uploaded to. Consider using this to organize your reports within S3. |  |
+| Name | Default | Description | Example | Available since version |
+|------|---------|-------------|---------|-------------------------|
+| ec2.instance.count | 1 | Number of instances that will be launched. | 2 | 1.0.0 |
+| ec2.instance.type | m3.medium | Type of the EC2 instances that will be launched. | m3.medium | 1.0.0 |
+| ec2.ami.id | ami-b66ed3de | [AMI ID](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html) of the EC2 instance. This drives which operating system will be installed on your instance. When changing this setting, make sure your `install-gatling.sh` script still works. Among other things this impacts which package management tool is installed. | | 1.0.0 |
+| ec2.key.pair.name | gatling-key-pair | The [key pair](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html) that will be used to access the load generator instances. |  | 1.0.0 |
+| ec2.security.group | gatling-security-group | The [security group](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html) used by the load generators. Make sure that your local development environment and CI system have SSH access to the load generators via the security group.  |  | 1.0.0 |
+| ec2.force.termination | false | `true` if the load generators should be terminated after the test despite of test failures. `false` if the load generators should be kept alive in case of failures to allow troubleshooting. If the tests succeeds all load generators will be terminated regardless of this setting. Setting it to `false` allows troubleshooting failed load generators. Setting it to `true` does not allow troubleshooting but helps to reduce EC2 costs. | | 1.0.3-SNAPSHOT |
+| ssh.private.key | ${user.home}/gatling-private-key.pem |  |  | 1.0.0 |
+| gatling.install.script | ${project.basedir}/src/test/resources/scripts/install-gatling.sh | Path to the script used to install Gatling on each load generator and configure the instance accordingly. |  | 1.0.0 |
+| gatling.simulation | Simulation | Fully qualified class name of the Gatling simulation that will be executed on each load generator |  | 1.0.0 |
+| gatling.test.name | (empty) | Short description of the test that is going to run. |  | 1.0.0 |
+| path.config.file | ${project.basedir}/src/test/resources/config.properties | Path to your tests configuration file. |  | 1.0.0 |
+| gatling.local.results |  |  |  | 1.0.0 |
+| gatling.local.home |  |  |  | 1.0.0 |
+| gatling.root | gatling-charts-highcharts-bundle-2.1.4 | The name of the gatling root directory on the load generator instances. Update this if your installation script is installing a custom version of Gatling resulting in a different folder name. |  | 1.0.0 |
+| gatling.java.opts | -Xms1g -Xmx6g | Any additional JVM arguments you want to pass through to Gatling. Use this to increase the heap space, open ports for debugging, set environment variables, etc. |  | 1.0.0 |
+| s3.upload.enabled | false | Enable or disable the upload of the final report to S3. |  | 1.0.0 |
+| s3.bucket | loadtest-results | Name of the S3 bucket that the load test results will be uploaded to. |  | 1.0.0 |
+| s3.subfolder | (empty string) | Name of the subfolder within ${s3.bucket} to which the load test results will be uploaded to. Consider using this to organize your reports within S3. |  | 1.0.0 |
 
 # Best Practices
 

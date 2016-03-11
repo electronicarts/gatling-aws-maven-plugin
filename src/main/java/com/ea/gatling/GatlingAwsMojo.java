@@ -51,6 +51,9 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "ec2.security.group", defaultValue = "gatling-security-group")
     private String ec2SecurityGroup;
 
+    @Parameter(property = "ec2.force.termination", defaultValue = "false")
+    private boolean ec2ForceTermination = false;
+
     @Parameter(property = "ssh.private.key", defaultValue = "${user.home}/gatling-private-key.pem")
     private File sshPrivateKey;
 
@@ -159,7 +162,7 @@ public class GatlingAwsMojo extends AbstractMojo {
 
         boolean allHostsSuccessful = successfulHosts.size() == instances.size();
 
-        if (allHostsSuccessful) {
+        if (allHostsSuccessful || ec2ForceTermination) {
             runner.terminateInstances(instances.keySet());
         } else {
             // One or more hosts were unsuccessful. Keep the load generators running so that we can debug them and download the simulation results manually.
