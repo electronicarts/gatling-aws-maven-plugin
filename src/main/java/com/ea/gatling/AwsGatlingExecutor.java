@@ -68,12 +68,15 @@ public class AwsGatlingExecutor implements Runnable {
             SshClient.scpUpload(host, SSH_USER, sshPrivateKey, path, "");
         }
 
-        log("Copying additional JAR files");
-        for (File file : new File("target").listFiles()) {
-            String path = file.getAbsolutePath();
-            if (path.endsWith("-jar-with-dependencies.jar")) {
-                log("Copying JAR file " + path);
-                SshClient.scpUpload(host, SSH_USER, sshPrivateKey, path, gatlingRoot + "/lib");
+        final File targetFolder = new File("target");
+        if (isValidDirectory(targetFolder)) {
+            log("Copying additional JAR files");
+            for (File file : targetFolder.listFiles()) {
+                String path = file.getAbsolutePath();
+                if (path.endsWith("-jar-with-dependencies.jar")) {
+                    log("Copying JAR file " + path);
+                    SshClient.scpUpload(host, SSH_USER, sshPrivateKey, path, gatlingRoot + "/lib");
+                }
             }
         }
 
@@ -88,17 +91,22 @@ public class AwsGatlingExecutor implements Runnable {
         SshClient.scpUpload(host, SSH_USER, sshPrivateKey, simulationConfig.getAbsolutePath(), "");
 
         // copy simulation files
-        log("Copying simulation files");
-        for (File file : gatlingSourceDir.listFiles()) {
-            SshClient.scpUpload(host, SSH_USER, sshPrivateKey, file.getAbsolutePath(), gatlingRoot + "/user-files/simulations");
+        if (isValidDirectory(gatlingSourceDir)) {
+            log("Copying simulation files");
+            for (File file : gatlingSourceDir.listFiles()) {
+                SshClient.scpUpload(host, SSH_USER, sshPrivateKey, file.getAbsolutePath(), gatlingRoot + "/user-files/simulations");
+            }
         }
 
-        // copy simulation gatling configuration file if it exists
-        log("Copying gatling configuration files");
-        for (File file : new File("src/test/resources/conf").listFiles()) {
-            String path = file.getAbsolutePath();
-            log("Copying gatling configuration file: " + path);
-            SshClient.scpUpload(host, SSH_USER, sshPrivateKey, path, gatlingRoot + "/conf");
+        // copy simulation gatling configuration files if it exists
+        final File configFolder = new File("src/test/resources/conf");
+        if (isValidDirectory(configFolder)) {
+            log("Copying gatling configuration files");
+            for (File file : configFolder.listFiles()) {
+                String path = file.getAbsolutePath();
+                log("Copying gatling configuration file: " + path);
+                SshClient.scpUpload(host, SSH_USER, sshPrivateKey, path, gatlingRoot + "/conf");
+            }
         }
 
         // start test
@@ -122,6 +130,10 @@ public class AwsGatlingExecutor implements Runnable {
         if (debugOutputEnabled) {
             System.out.format("%s > %s%n", host, message);
         }
+    }
+
+    private boolean isValidDirectory(File directory) {
+        return directory.exists() && directory.isDirectory() && directory.listFiles() != null;
     }
 
     public void run() {
