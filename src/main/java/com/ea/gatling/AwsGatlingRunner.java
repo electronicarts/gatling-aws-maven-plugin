@@ -37,6 +37,23 @@ public class AwsGatlingRunner {
     }
 
     public Map<String, Instance> launchEC2Instances(String instanceType, int instanceCount, String ec2KeyPairName, String ec2SecurityGroup, String amiId) {
+        Map<String, Instance> instances = new HashMap<String, Instance>();
+
+        Filter[] filters = new Filter[2];
+        filters[0] = new Filter("tag:Name").withValues("Gatling Load Generator");
+        filters[1] = new Filter("instance-state-name").withValues("running");
+
+        DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest().withFilters(filters));
+
+        // Testing to try and retrieve an existing instance. (In this case the one we just created)
+        for (Reservation reservation : describeInstancesResult.getReservations()) {
+            for (Instance instance : reservation.getInstances()) {
+                System.out.println("Reservations " + instance.getInstanceId() + " (" + instance.getState().getName() + "): " + instance.getSecurityGroups().get(0).getGroupName());
+                instances.put(instance.getInstanceId(), instance);
+            }
+
+        }
+/*
         RunInstancesResult runInstancesResult = ec2client.runInstances(new RunInstancesRequest()
                 .withImageId(amiId)
                 .withInstanceType(instanceType)
@@ -87,15 +104,7 @@ public class AwsGatlingRunner {
                 }
             }
         }
-
-        // Testing to try and retrieve an existing instance. (In this case the one we just created)
-        for (Reservation reservation :
-                ec2client.describeInstances(new DescribeInstancesRequest().withFilters(new Filter("group-name").withValues("gatling-loadtest"))).getReservations()) {
-            for (Instance instance : reservation.getInstances()) {
-                System.out.println("Reservations " + instance.getInstanceId() + " (" + instance.getState().getName() + "): " + instance.getSecurityGroups().get(0).getGroupName());
-            }
-        }
-
+*/
         return instances;
     }
 
