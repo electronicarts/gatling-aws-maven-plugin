@@ -88,6 +88,14 @@ public class AwsGatlingRunner {
             }
         }
 
+        // Testing to try and retrieve an existing instance. (In this case the one we just created)
+        for (Reservation reservation :
+                ec2client.describeInstances(new DescribeInstancesRequest().withFilters(new Filter("group-name").withValues("gatling-loadtest"))).getReservations()) {
+            for (Instance instance : reservation.getInstances()) {
+                System.out.println("Reservations " + instance.getInstanceId() + " (" + instance.getState().getName() + "): " + instance.getSecurityGroups().get(0).getGroupName());
+            }
+        }
+
         return instances;
     }
 
