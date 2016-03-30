@@ -42,6 +42,7 @@ public class AwsGatlingRunner {
         Filter[] filters = new Filter[2];
         filters[0] = new Filter("tag:Name").withValues("Gatling Load Generator");
         filters[1] = new Filter("instance-state-name").withValues("running");
+        //filters[2] = new Filter("instance-type").withValues("t2.micro");
 
         DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest().withFilters(filters));
 
@@ -53,58 +54,58 @@ public class AwsGatlingRunner {
             }
 
         }
-/*
-        RunInstancesResult runInstancesResult = ec2client.runInstances(new RunInstancesRequest()
-                .withImageId(amiId)
-                .withInstanceType(instanceType)
-                .withMinCount(instanceCount)
-                .withMaxCount(instanceCount)
-                .withKeyName(ec2KeyPairName)
-                .withSecurityGroups(ec2SecurityGroup));
-        Map<String, Instance> instances = new HashMap<String, Instance>();
 
-        for (Instance instance : runInstancesResult.getReservation().getInstances()) {
-            System.out.println(instance.getInstanceId() + " launched");
-            instances.put(instance.getInstanceId(), instance);
-        }
+        if(instances.isEmpty()) {
+            RunInstancesResult runInstancesResult = ec2client.runInstances(new RunInstancesRequest()
+                    .withImageId(amiId)
+                    .withInstanceType(instanceType)
+                    .withMinCount(instanceCount)
+                    .withMaxCount(instanceCount)
+                    .withKeyName(ec2KeyPairName)
+                    .withSecurityGroups(ec2SecurityGroup));
 
-        // Tag instances on creation. Adding the tag enables us to ensure we are terminating a load generator instance.
-        ec2client.createTags(new CreateTagsRequest()
-                .withResources(instances.keySet())
-                .withTags(GATLING_NAME_TAG));
-
-        DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(instances.keySet());
-        boolean allStarted = false;
-        while (!allStarted) {
-            sleep(INSTANCE_STATUS_SLEEP_MS);
-            allStarted = true;
-            DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(describeInstancesRequest);
-            for (Reservation reservation : describeInstancesResult.getReservations()) {
-                for (Instance instance : reservation.getInstances()) {
-                    System.out.format("%s %s%n", instance.getInstanceId(), instance.getState().getName());
-                    if (!instance.getState().getName().equals("running")) {
-                        allStarted = false;
-                    } else {
-                        instances.put(instance.getInstanceId(), instance);
-                    }
-                }
+            for (Instance instance : runInstancesResult.getReservation().getInstances()) {
+                System.out.println(instance.getInstanceId() + " launched");
+                instances.put(instance.getInstanceId(), instance);
             }
 
-            DescribeInstanceStatusRequest describeInstanceStatusRequest = new DescribeInstanceStatusRequest().withInstanceIds(instances.keySet());
-            boolean allInitialized = false;
-            while (!allInitialized) {
+            // Tag instances on creation. Adding the tag enables us to ensure we are terminating a load generator instance.
+            ec2client.createTags(new CreateTagsRequest()
+                    .withResources(instances.keySet())
+                    .withTags(GATLING_NAME_TAG));
+
+            DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(instances.keySet());
+            boolean allStarted = false;
+            while (!allStarted) {
                 sleep(INSTANCE_STATUS_SLEEP_MS);
-                DescribeInstanceStatusResult describeInstanceStatus = ec2client.describeInstanceStatus(describeInstanceStatusRequest);
-                allInitialized = true;
-                for (InstanceStatus instanceStatus : describeInstanceStatus.getInstanceStatuses()) {
-                    System.out.format("%s %s%n", instanceStatus.getInstanceId(), instanceStatus.getInstanceStatus().getStatus());
-                    if (!instanceStatus.getInstanceStatus().getStatus().equals("ok")) {
-                        allInitialized = false;
+                allStarted = true;
+                describeInstancesResult = ec2client.describeInstances(describeInstancesRequest);
+                for (Reservation reservation : describeInstancesResult.getReservations()) {
+                    for (Instance instance : reservation.getInstances()) {
+                        System.out.format("%s %s%n", instance.getInstanceId(), instance.getState().getName());
+                        if (!instance.getState().getName().equals("running")) {
+                            allStarted = false;
+                        } else {
+                            instances.put(instance.getInstanceId(), instance);
+                        }
+                    }
+                }
+
+                DescribeInstanceStatusRequest describeInstanceStatusRequest = new DescribeInstanceStatusRequest().withInstanceIds(instances.keySet());
+                boolean allInitialized = false;
+                while (!allInitialized) {
+                    sleep(INSTANCE_STATUS_SLEEP_MS);
+                    DescribeInstanceStatusResult describeInstanceStatus = ec2client.describeInstanceStatus(describeInstanceStatusRequest);
+                    allInitialized = true;
+                    for (InstanceStatus instanceStatus : describeInstanceStatus.getInstanceStatuses()) {
+                        System.out.format("%s %s%n", instanceStatus.getInstanceId(), instanceStatus.getInstanceStatus().getStatus());
+                        if (!instanceStatus.getInstanceStatus().getStatus().equals("ok")) {
+                            allInitialized = false;
+                        }
                     }
                 }
             }
         }
-*/
         return instances;
     }
 
