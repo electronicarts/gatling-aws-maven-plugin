@@ -54,6 +54,7 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "ec2.force.termination", defaultValue = "false")
     private boolean ec2ForceTermination = false;
 
+    // This parameter, when set to true, will override the ec2ForceTermination and allow the EC2 instance to continue running for reuse
     @Parameter(property = "ec2.keep.alive", defaultValue="false")
     private boolean ec2KeepAlive = false;
 

@@ -39,23 +39,25 @@ public class AwsGatlingRunner {
     public Map<String, Instance> launchEC2Instances(String instanceType, int instanceCount, String ec2KeyPairName, String ec2SecurityGroup, String amiId) {
         Map<String, Instance> instances = new HashMap<String, Instance>();
 
-        // Setup a filter to find any previously generated EC2 instances
+        // Setup a filter to find any previously generated EC2 instances.
         Filter[] filters = new Filter[2];
+
         filters[0] = new Filter("tag:Name").withValues(GATLING_NAME_TAG.getValue());
         filters[1] = new Filter("instance-state-name").withValues("running");
 
-        DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest().withFilters(filters));
+        DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest()
+                .withFilters(filters));
 
-        // Check for existing EC2 instances that fit the filter criteria and use those
+        // Check for existing EC2 instances that fit the filter criteria and use those.
         for (Reservation reservation : describeInstancesResult.getReservations()) {
             for (Instance instance : reservation.getInstances()) {
-                System.out.println("Reservations " + instance.getInstanceId() + " (" + instance.getState().getName() + "): " + instance.getSecurityGroups().get(0).getGroupName());
+                // If we found any existing EC2 instances put them into the instances variable.
+                System.out.format("Reservations %s (%s): %s%n",instance.getInstanceId(),instance.getState().getName(),instance.getSecurityGroups().get(0).getGroupName());
                 instances.put(instance.getInstanceId(), instance);
             }
-
         }
 
-        // Only generate instances if none were found for reuse
+        // If instances is empty, that means we did not find any to reuse so let's create them
         if(instances.isEmpty()) {
             RunInstancesResult runInstancesResult = ec2client.runInstances(new RunInstancesRequest()
                     .withImageId(amiId)
