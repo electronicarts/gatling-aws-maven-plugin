@@ -39,14 +39,14 @@ public class AwsGatlingRunner {
     public Map<String, Instance> launchEC2Instances(String instanceType, int instanceCount, String ec2KeyPairName, String ec2SecurityGroup, String amiId) {
         Map<String, Instance> instances = new HashMap<String, Instance>();
 
+        // Setup a filter to find any previously generated EC2 instances
         Filter[] filters = new Filter[2];
-        filters[0] = new Filter("tag:Name").withValues("Gatling Load Generator");
+        filters[0] = new Filter("tag:Name").withValues(GATLING_NAME_TAG.getValue());
         filters[1] = new Filter("instance-state-name").withValues("running");
-        //filters[2] = new Filter("instance-type").withValues("t2.micro");
 
         DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest().withFilters(filters));
 
-        // Testing to try and retrieve an existing instance. (In this case the one we just created)
+        // Check for existing EC2 instances that fit the filter criteria and use those
         for (Reservation reservation : describeInstancesResult.getReservations()) {
             for (Instance instance : reservation.getInstances()) {
                 System.out.println("Reservations " + instance.getInstanceId() + " (" + instance.getState().getName() + "): " + instance.getSecurityGroups().get(0).getGroupName());
@@ -55,6 +55,7 @@ public class AwsGatlingRunner {
 
         }
 
+        // Only generate instances if none were found for reuse
         if(instances.isEmpty()) {
             RunInstancesResult runInstancesResult = ec2client.runInstances(new RunInstancesRequest()
                     .withImageId(amiId)
@@ -106,6 +107,7 @@ public class AwsGatlingRunner {
                 }
             }
         }
+
         return instances;
     }
 

@@ -54,6 +54,9 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "ec2.force.termination", defaultValue = "false")
     private boolean ec2ForceTermination = false;
 
+    @Parameter(property = "ec2.keep.alive", defaultValue="false")
+    private boolean ec2KeepAlive = false;
+
     @Parameter(property = "ssh.private.key", defaultValue = "${user.home}/gatling-private-key.pem")
     private File sshPrivateKey;
 
@@ -162,12 +165,17 @@ public class GatlingAwsMojo extends AbstractMojo {
 
         boolean allHostsSuccessful = successfulHosts.size() == instances.size();
 
-        if (allHostsSuccessful || ec2ForceTermination) {
+        // If the ec2KeepAlive value is true then we need to skip terminating.
+        if ((allHostsSuccessful || ec2ForceTermination) && !ec2KeepAlive) {
             runner.terminateInstances(instances.keySet());
+        } else if (ec2KeepAlive) {
+            // Send a message out stating the machines are still running
+            System.out.println("EC2 instances are still running for the next load test");
         } else {
             // One or more hosts were unsuccessful. Keep the load generators running so that we can debug them and download the simulation results manually.
             listFailedInstances(instances, successfulHosts);
         }
+
 
         // Build report
         // TODO Parameterize heap space to allow generating larger reports
