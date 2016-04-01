@@ -40,10 +40,11 @@ public class AwsGatlingRunner {
         Map<String, Instance> instances = new HashMap<String, Instance>();
 
         // Setup a filter to find any previously generated EC2 instances.
-        Filter[] filters = new Filter[2];
+        Filter[] filters = new Filter[3];
 
         filters[0] = new Filter("tag:Name").withValues(GATLING_NAME_TAG.getValue());
         filters[1] = new Filter("instance-state-name").withValues("running");
+        filters[2] = new Filter("instance-type").withValues(instanceType);
 
         DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest()
                 .withFilters(filters));
@@ -59,6 +60,8 @@ public class AwsGatlingRunner {
 
         // If instances is empty, that means we did not find any to reuse so let's create them
         if(instances.isEmpty()) {
+            System.out.println("Did not find any existing instances, starting new ones.");
+
             RunInstancesResult runInstancesResult = ec2client.runInstances(new RunInstancesRequest()
                     .withImageId(amiId)
                     .withInstanceType(instanceType)
