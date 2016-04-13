@@ -3,7 +3,8 @@
  */
 package com.ea.gatling;
 
-import com.amazonaws.auth.PropertiesCredentials;
+import com.amazonaws.auth.*;
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
@@ -12,7 +13,6 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,14 +26,13 @@ public class AwsGatlingRunner {
     private TransferManager transferManager;
 
     public AwsGatlingRunner() {
-        try {
-            PropertiesCredentials credentials = new PropertiesCredentials(new File("aws.properties"));
-            ec2client = new AmazonEC2Client(credentials);
-            transferManager = new TransferManager(credentials);
-        } catch (IOException e) {
-            System.err.println("Unable to read AWS credentials from aws.properties file.");
-            throw new RuntimeException(e);
-        }
+        final AWSCredentialsProviderChain credentials = new AWSCredentialsProviderChain(new EnvironmentVariableCredentialsProvider(),
+                new SystemPropertiesCredentialsProvider(),
+                new ProfileCredentialsProvider(),
+                new InstanceProfileCredentialsProvider(),
+                new PropertiesFileCredentialsProvider("aws.properties"));
+        ec2client = new AmazonEC2Client(credentials);
+        transferManager = new TransferManager(credentials);
     }
 
     public Map<String, Instance> launchEC2Instances(String instanceType, int instanceCount, String ec2KeyPairName, String ec2SecurityGroup, String amiId) {
