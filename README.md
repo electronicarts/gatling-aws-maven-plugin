@@ -225,9 +225,11 @@ This will spin up 3 c3.large instances and start the `com.FooTest` simulation on
 
 # Additional Information
 
-* [Maven Properties](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Maven-properties)
+* [Quickstart](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Quickstart)
 * [Load Testing Best Practices](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Load-Testing-Best-Practices)
+* [Example Gatling Reports](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Example-Gatling-Reports)
 * [Plugin Phases](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Plugin-Phases)
+* [Maven Properties](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Maven-properties)
 
 # Credits
 
