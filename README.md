@@ -221,33 +221,13 @@ Example:
     clean install                         \
     assembly:single com.ea.gatling:gatling-aws-maven-plugin:execute
 
-This will spin up 3 c3.large instances and start the com.FooTest simulation on each instance.
+This will spin up 3 c3.large instances and start the `com.FooTest` simulation on each instance.
 
-# Maven properties
+# Additional Information
 
-See [Maven Properties](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Maven-properties).
-
-# Best Practices
-
-See [Load Testing Best Practices](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Load-Testing-Best-Practices).
-
-# Phases
-
-This section describes the different phases the Gatling AWS Maven plugin goes through. Understanding this should enable you to troubleshoot and customize the plugin's behaviour more easily.
-
-## Phase 1: Setup
-1. Launch EC2 instances according to the EC2 parameters e.g. ec2.instance.count and ec2.instance.type.
-2. Distribute dependencies (JAR files, simulation files, configuration files, Gatling install script) to each load generator.
-3. Configure each load generator to ensure it is ready to run the test (e.g. install the Java SDK, raise the max number of open files).
-
-## Phase 2: Run test
-Start the test on each load generator instance. Send status updates back to Jenkins. Optionally report status of each load generator to Graphite. Wait for the completion of the test. In most cases this will be the longest phase by far.
-
-## Phase 3: Data aggregation
-1. Download results from all load generators
-2. Consume all simulation files to generate a single Gatling report
-3. Upload the report to S3 and ensure it is publicly accessible
-4. Share configuration parameters and a link to the results with other systems e.g. Confluence.
+* [Maven Properties](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Maven-properties)
+* [Load Testing Best Practices](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Load-Testing-Best-Practices)
+* [Plugin Phases](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Plugin-Phases)
 
 # Credits
 
