@@ -221,43 +221,13 @@ Example:
 
 This will spin up 3 c3.large instances and start the com.FooTest simulation on each instance.
 
-## Maven properties
+# Maven properties
 
-| Name | Default | Description | Example | Available since version |
-|------|---------|-------------|---------|-------------------------|
-| ec2.instance.count | 1 | Number of instances that will be launched. | 2 | 1.0.0 |
-| ec2.instance.type | m3.medium | Type of the EC2 instances that will be launched. | m3.medium | 1.0.0 |
-| ec2.ami.id | ami-b66ed3de | [AMI ID](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html) of the EC2 instance. This drives which operating system will be installed on your instance. When changing this setting, make sure your `install-gatling.sh` script still works. Among other things this impacts which package management tool is installed. | | 1.0.0 |
-| ec2.key.pair.name | gatling-key-pair | The [key pair](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html) that will be used to access the load generator instances. |  | 1.0.0 |
-| ec2.security.group | gatling-security-group | The [security group](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html) used by the load generators. Make sure that your local development environment and CI system have SSH access to the load generators via the security group.  |  | 1.0.0 |
-| ec2.force.termination | false | `true` if the load generators should be terminated after the test despite of test failures. `false` if the load generators should be kept alive in case of failures to allow troubleshooting. If the tests succeeds all load generators will be terminated regardless of this setting. Setting it to `false` allows troubleshooting failed load generators. Setting it to `true` does not allow troubleshooting but helps to reduce EC2 costs. | | 1.0.4-SNAPSHOT |
-| ec2.keep.alive | false | `true` if the load generators should be left running for another test (will override ec2.force.termination). `false` to allow load generators to be terminated. | If tests are not going to run for the full hour use this setting to keep from being charged for the 1 hour minimum up time, also cuts down on load generator initializing time | 1.0.4-SNAPSHOT |
-| ssh.private.key | ${user.home}/gatling-private-key.pem |  |  | 1.0.0 |
-| gatling.install.script | ${project.basedir}/src/test/resources/scripts/install-gatling.sh | Path to the script used to install Gatling on each load generator and configure the instance accordingly. |  | 1.0.0 |
-| gatling.simulation | Simulation | Fully qualified class name of the Gatling simulation that will be executed on each load generator |  | 1.0.0 |
-| gatling.test.name | (empty) | Short description of the test that is going to run. |  | 1.0.0 |
-| path.config.file | ${project.basedir}/src/test/resources/config.properties | Path to your tests configuration file. |  | 1.0.0 |
-| gatling.local.results |  |  |  | 1.0.0 |
-| gatling.local.home |  |  |  | 1.0.0 |
-| gatling.root | gatling-charts-highcharts-bundle-2.1.4 | The name of the gatling root directory on the load generator instances. Update this if your installation script is installing a custom version of Gatling resulting in a different folder name. |  | 1.0.0 |
-| gatling.java.opts | -Xms1g -Xmx6g | Any additional JVM arguments you want to pass through to Gatling. Use this to increase the heap space, open ports for debugging, set environment variables, etc. |  | 1.0.0 |
-| s3.upload.enabled | false | Enable or disable the upload of the final report to S3. |  | 1.0.0 |
-| s3.bucket | loadtest-results | Name of the S3 bucket that the load test results will be uploaded to. |  | 1.0.0 |
-| s3.subfolder | (empty string) | Name of the subfolder within ${s3.bucket} to which the load test results will be uploaded to. Consider using this to organize your reports within S3. |  | 1.0.0 |
+See [Maven Properties](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Maven-properties).
 
 # Best Practices
 
-## Logging
-* While you are developing and troubleshooting your load test script, consider a combination of debug messages and actual local debugging. If you leave the logging statements in your script, consider their impact on CPU utilization and disk space. Minimize logging for large scale tests to the absolute minimum.
-
-## Monitoring
-* Monitor the load test while it is running to verify it is behaving the way you expect. Take advantage of the AWS CloudWatch metrics of your load generator instances. Also note that you can configure monitoring each load generator with Graphite through the `gatling.conf` configuration file. Take advantage of additional monitoring by SSH-ing into the load generators during the test using the same SSH key pair used by Jenkins.
-
-## Jenkins
-* Pipelines: Consider using [Jenkins pipelines](https://wiki.jenkins-ci.org/display/JENKINS/Build+Pipeline+Plugin) for the different tasks involved in load testing. We recommend creating a pipeline of the following jobs: (1) Update the load test environment with the latest code. (2) Kick off a load test against the freshly updated environment. (3) Append the results link to an external system like Confluence.
- Consider using build parameters to configure your load test. Among other things, we frequently wanted to parameterize the following values: URL of the server you want to test (this allows you to vary the load test environments), number and type of load generators, name of the specific scenario you want to load test (your simulation file can pickup this value to send different kinds of traffic patterns e.g. cold spike, stair case, soak, sine-wave), etc.
-* Utilization: The Gatling AWS Maven has a very specific performance profile. For the majority of the test, the plugin is network IO heavy (phase 1 and 2). Once the actual test is over, the aggregation of the results is very CPU intensive. As a result, we recommend having a dedicated [Jenkins slave](https://wiki.jenkins-ci.org/display/JENKINS/Distributed+builds) for running the tests. Ideally this slave is an EC2 instance itself. The network IO between the Jenkins build slave and the load generators will benefit from that and it simplifies changing the size of the slave as necessary to reduce costs.
-* Disk Space: Wipe the workspace at the start of the test to reduce the disk space requirements on Jenkins. Especially when long-running tests are logging errors and warnings for long periods of time, you will need a lot of temporary disk space on the Jenkins slave. This space can be reclaimed once the simulation results have been archived to S3.
+See [Load Testing Best Practices](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Load-Testing-Best-Practices).
 
 # Phases
 
