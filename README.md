@@ -7,12 +7,14 @@ The Gatling AWS Maven plugin takes the pain out of scaling up your Gatling tests
 
 # Getting Started
 
-This section shows you which setup is required to use the plugin, how to configure your existing Maven project, how to run tests locally for testing, and how to let Jenkins start a cluster of EC2 instances that will run your load test.
+This section shows you which setup is required to use the plugin, how to configure your existing [Maven](https://maven.apache.org/) project, how to run tests locally for testing, and how to let [Jenkins](https://jenkins.io/) start a cluster of [EC2](https://aws.amazon.com/ec2) instances that will run your load test.
+
+For the 5 minute version of this document, take a look at [Quickstart](https://github.com/electronicarts/gatling-aws-maven-plugin/wiki/Quickstart).
 
 ## AWS Setup
 Make the following changes in AWS to allow the Gatling AWS Maven plugin to launch EC2 instances and upload the results to S3 on your behalf.
 
-1. Create a S3 bucket to upload results to e.g. loadtest-results.
+1. Create a S3 bucket to upload results to e.g. `loadtest-results`.
 2. Create new access/secret key in IAM with the following permissions. Ensure that the S3 bucket you picked is referenced in the `Resource` section of `"Action":"s3:*"`.
 
 ```javascript
