@@ -2,9 +2,17 @@
 
 This is a basic load test to demonstrate how to integrate with the Gatling Maven AWS plugin.
 
+Run the load tests locally via the `./runLoadtestLocally.sh` script. Alternatively, select any of the tests and run them via Maven as follows:
+
+```$ mvn gatling:execute -Dgatling.simulation=com.ea.gatling.example.LoadTest
+$ mvn gatling:execute -Dgatling.simulation=com.ea.gatling.example.StairCaseTest
+$ mvn gatling:execute -Dgatling.simulation=com.ea.gatling.example.SoakTest```
+
+To run any of the tests remotely on AWS EC2, run the `./downloadGatling.sh` script (only required once) followed by `$ ./startLoadtestRemotely.sh`.
+
 # License
 
-Copyright (C) 2015 Electronic Arts Inc.  All rights reserved.
+Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
