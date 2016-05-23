@@ -58,6 +58,9 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "ec2.keep.alive", defaultValue="false")
     private boolean ec2KeepAlive = false;
 
+    @Parameter(property = "ec2.end.point", defaultValue="https://ec2.us-east-1.amazonaws.com")
+    private String ec2EndPoint;
+
     @Parameter(property = "ssh.private.key", defaultValue = "${user.home}/gatling-private-key.pem")
     private File sshPrivateKey;
 
@@ -116,7 +119,7 @@ public class GatlingAwsMojo extends AbstractMojo {
     private String s3Subfolder;
 
     public void execute() throws MojoExecutionException {
-        AwsGatlingRunner runner = new AwsGatlingRunner();
+        AwsGatlingRunner runner = new AwsGatlingRunner(ec2EndPoint);
 
         Map<String, Instance> instances = runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroup, ec2AmiId);
         ConcurrentHashMap<String, Boolean> successfulHosts = new ConcurrentHashMap<String, Boolean>();

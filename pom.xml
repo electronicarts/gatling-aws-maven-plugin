@@ -11,9 +11,9 @@
     <packaging>maven-plugin</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <gatling.version>2.1.6</gatling.version>
-        <gatling-plugin.version>2.1.6</gatling-plugin.version>
-        <aws.version>1.10.52</aws.version>
+        <gatling.version>2.2.0</gatling.version>
+        <gatling-plugin.version>2.2.0</gatling-plugin.version>
+        <aws.version>1.10.75</aws.version>
     </properties>
     <licenses>
         <license>
