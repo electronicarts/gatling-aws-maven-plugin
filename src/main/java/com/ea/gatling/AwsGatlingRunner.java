@@ -25,13 +25,14 @@ public class AwsGatlingRunner {
     private final AmazonEC2Client ec2client;
     private TransferManager transferManager;
 
-    public AwsGatlingRunner() {
+    public AwsGatlingRunner(final String endpoint) {
         final AWSCredentialsProviderChain credentials = new AWSCredentialsProviderChain(new EnvironmentVariableCredentialsProvider(),
                 new SystemPropertiesCredentialsProvider(),
                 new ProfileCredentialsProvider(),
                 new InstanceProfileCredentialsProvider(),
                 new PropertiesFileCredentialsProvider("aws.properties"));
         ec2client = new AmazonEC2Client(credentials);
+        ec2client.setEndpoint(endpoint);
         transferManager = new TransferManager(credentials);
     }
 
