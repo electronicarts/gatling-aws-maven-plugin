@@ -64,8 +64,8 @@ The plugin expects that the access/secret key are provided at runtime to interac
 
 Create a new Maven project that follows the following structure:
 
-1. Create a Gatling simulation (e.g. com.FooTest) in `src/test/scala/com/FooTest.scala`. See <a href="http://gatling.io/docs/2.1.7/general/concepts.html">the Gatling concepts docs</a> for more information.
-2. Put a gatling.conf and logback.xml file in `src/test/resources`. See <a href="http://gatling.io/docs/2.1.7/general/configuration.html">the Gatling configuration docs</a> for more information.
+1. Create a Gatling simulation (e.g. com.FooTest) in `src/test/scala/com/FooTest.scala`. See <a href="http://gatling.io/docs/2.2.0/general/concepts.html">the Gatling concepts docs</a> for more information.
+2. Put a gatling.conf and logback.xml file in `src/test/resources`. See <a href="http://gatling.io/docs/2.2.0/general/configuration.html">the Gatling configuration docs</a> for more information.
 3. Create a `install-gatling.sh` script in `src/test/resources` This script will run on each load generator to install Gatling and do any other setup necessary before starting your test. Make sure **the script is executable** and looks similar to the following:
 
 ```
@@ -80,7 +80,7 @@ sudo yum remove  --quiet --assumeyes java-1.7.0-openjdk.x86_64
 sudo yum install --quiet --assumeyes java-1.8.0-openjdk-devel.x86_64 htop screen
 
 # Install Gatling
-GATLING_VERSION=2.1.7
+GATLING_VERSION=2.2.0
 URL=https://repo1.maven.org/maven2/io/gatling/highcharts/gatling-charts-highcharts-bundle/${GATLING_VERSION}/gatling-charts-highcharts-bundle-${GATLING_VERSION}-bundle.zip
 GATLING_ARCHIVE=gatling-charts-highcharts-bundle-${GATLING_VERSION}-bundle.zip
 
@@ -95,8 +95,8 @@ rm -rf gatling-charts-highcharts-bundle-${GATLING_VERSION}/user-files/simulation
 
 ```xml
   <properties>
-    <gatling.version>2.1.7</gatling.version>
-    <gatling-plugin.version>2.1.7</gatling-plugin.version>
+    <gatling.version>2.2.0</gatling.version>
+    <gatling-plugin.version>2.2.0</gatling-plugin.version>
     <gatling.skip>false</gatling.skip>
 
     <!-- Information required to start EC2 instances and control them via SSH -->
@@ -105,9 +105,9 @@ rm -rf gatling-charts-highcharts-bundle-${GATLING_VERSION}/user-files/simulation
     <ec2.security.group>default</ec2.security.group>
     <ec2.instance.count>1</ec2.instance.count>
 
-    <gatling.local.home>${project.basedir}/gatling/gatling-charts-highcharts-bundle-2.1.7/bin/gatling.sh</gatling.local.home>
+    <gatling.local.home>${project.basedir}/gatling/gatling-charts-highcharts-bundle-2.2.0/bin/gatling.sh</gatling.local.home>
     <gatling.install.script>${project.basedir}/src/test/resources/install-gatling.sh</gatling.install.script>
-    <gatling.root>gatling-charts-highcharts-bundle-2.1.7</gatling.root>
+    <gatling.root>gatling-charts-highcharts-bundle-2.2.0</gatling.root>
     <gatling.java.opts> -Xms1g -Xmx25g -Xss8M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256M</gatling.java.opts>
 
     <!-- Fully qualified name of the Gatling simulation and a name describing the test -->
