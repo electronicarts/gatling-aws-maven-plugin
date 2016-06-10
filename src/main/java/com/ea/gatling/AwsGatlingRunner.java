@@ -40,15 +40,8 @@ public class AwsGatlingRunner {
     public Map<String, Instance> launchEC2Instances(String instanceType, int instanceCount, String ec2KeyPairName, String ec2SecurityGroup, String amiId) {
         Map<String, Instance> instances = new HashMap<String, Instance>();
 
-        // Setup a filter to find any previously generated EC2 instances.
-        Filter[] filters = new Filter[3];
-
-        filters[0] = new Filter("tag:Name").withValues(GATLING_NAME_TAG.getValue());
-        filters[1] = new Filter("instance-state-name").withValues("running");
-        filters[2] = new Filter("instance-type").withValues(instanceType);
-
         DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest()
-                .withFilters(filters));
+                .withFilters(getInstanceFilters(instanceType)));
 
         // Check for existing EC2 instances that fit the filter criteria and use those.
         for (Reservation reservation : describeInstancesResult.getReservations()) {
@@ -60,7 +53,7 @@ public class AwsGatlingRunner {
         }
 
         // If instances is empty, that means we did not find any to reuse so let's create them
-        if(instances.isEmpty()) {
+        if (instances.isEmpty()) {
             System.out.println("Did not find any existing instances, starting new ones.");
 
             RunInstancesResult runInstancesResult = ec2client.runInstances(new RunInstancesRequest()
@@ -115,6 +108,17 @@ public class AwsGatlingRunner {
         }
 
         return instances;
+    }
+
+    private Filter[] getInstanceFilters(String instanceType) {
+        // Setup a filter to find any previously generated EC2 instances.
+        Filter[] filters = new Filter[3];
+
+        filters[0] = new Filter("tag:Name").withValues(GATLING_NAME_TAG.getValue());
+        filters[1] = new Filter("instance-state-name").withValues("running");
+        filters[2] = new Filter("instance-type").withValues(instanceType);
+
+        return filters;
     }
 
     public void terminateInstances(Collection<String> instanceIds) {
