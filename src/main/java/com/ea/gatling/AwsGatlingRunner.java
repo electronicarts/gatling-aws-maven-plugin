@@ -47,7 +47,7 @@ public class AwsGatlingRunner {
         for (Reservation reservation : describeInstancesResult.getReservations()) {
             for (Instance instance : reservation.getInstances()) {
                 // If we found any existing EC2 instances put them into the instances variable.
-                System.out.format("Reservations %s (%s): %s%n",instance.getInstanceId(),instance.getState().getName(),instance.getSecurityGroups().get(0).getGroupName());
+                System.out.format("Reservations %s (%s): %s%n", instance.getInstanceId(), instance.getState().getName(), instance.getSecurityGroups().get(0).getGroupName());
                 instances.put(instance.getInstanceId(), instance);
             }
         }
