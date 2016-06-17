@@ -8,16 +8,10 @@ handlers:
   script: _go_app
 
 automatic_scaling:
-  min_num_instances: 3
-  max_num_instances: 100
-  max_concurrent_requests: 250
-# TODO experiment with those settings
-#  max_pending_latency: 100ms
-#  cool_down_period_sec: 120
-#  cpu_utilization:
-#    target_utilization: 0.5
+  min_num_instances: 1
+  max_num_instances: 1
 
 resources:
-  cpu: 2
-  memory_gb: 1
+  cpu: .1
+  memory_gb: .1
   disk_size_gb: 10
