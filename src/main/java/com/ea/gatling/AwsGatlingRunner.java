@@ -75,39 +75,46 @@ public class AwsGatlingRunner {
                     .withTags(GATLING_NAME_TAG));
 
             DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(instances.keySet());
-            boolean allStarted = false;
-            while (!allStarted) {
-                sleep(INSTANCE_STATUS_SLEEP_MS);
-                allStarted = true;
-                describeInstancesResult = ec2client.describeInstances(describeInstancesRequest);
-                for (Reservation reservation : describeInstancesResult.getReservations()) {
-                    for (Instance instance : reservation.getInstances()) {
-                        System.out.format("%s %s%n", instance.getInstanceId(), instance.getState().getName());
-                        if (!instance.getState().getName().equals("running")) {
-                            allStarted = false;
-                        } else {
-                            instances.put(instance.getInstanceId(), instance);
-                        }
+
+            startAllInstances(instances, describeInstancesRequest);
+        }
+
+        return instances;
+    }
+
+    private void startAllInstances(Map<String, Instance> instances, DescribeInstancesRequest describeInstancesRequest) {
+        boolean allStarted = false;
+        DescribeInstancesResult describeInstancesResult;
+
+        while (!allStarted) {
+            sleep(INSTANCE_STATUS_SLEEP_MS);
+            allStarted = true;
+            describeInstancesResult = ec2client.describeInstances(describeInstancesRequest);
+            for (Reservation reservation : describeInstancesResult.getReservations()) {
+                for (Instance instance : reservation.getInstances()) {
+                    System.out.format("%s %s%n", instance.getInstanceId(), instance.getState().getName());
+                    if (!instance.getState().getName().equals("running")) {
+                        allStarted = false;
+                    } else {
+                        instances.put(instance.getInstanceId(), instance);
                     }
                 }
+            }
 
-                DescribeInstanceStatusRequest describeInstanceStatusRequest = new DescribeInstanceStatusRequest().withInstanceIds(instances.keySet());
-                boolean allInitialized = false;
-                while (!allInitialized) {
-                    sleep(INSTANCE_STATUS_SLEEP_MS);
-                    DescribeInstanceStatusResult describeInstanceStatus = ec2client.describeInstanceStatus(describeInstanceStatusRequest);
-                    allInitialized = true;
-                    for (InstanceStatus instanceStatus : describeInstanceStatus.getInstanceStatuses()) {
-                        System.out.format("%s %s%n", instanceStatus.getInstanceId(), instanceStatus.getInstanceStatus().getStatus());
-                        if (!instanceStatus.getInstanceStatus().getStatus().equals("ok")) {
-                            allInitialized = false;
-                        }
+            DescribeInstanceStatusRequest describeInstanceStatusRequest = new DescribeInstanceStatusRequest().withInstanceIds(instances.keySet());
+            boolean allInitialized = false;
+            while (!allInitialized) {
+                sleep(INSTANCE_STATUS_SLEEP_MS);
+                DescribeInstanceStatusResult describeInstanceStatus = ec2client.describeInstanceStatus(describeInstanceStatusRequest);
+                allInitialized = true;
+                for (InstanceStatus instanceStatus : describeInstanceStatus.getInstanceStatuses()) {
+                    System.out.format("%s %s%n", instanceStatus.getInstanceId(), instanceStatus.getInstanceStatus().getStatus());
+                    if (!instanceStatus.getInstanceStatus().getStatus().equals("ok")) {
+                        allInitialized = false;
                     }
                 }
             }
         }
-
-        return instances;
     }
 
     private Filter[] getInstanceFilters(String instanceType) {
