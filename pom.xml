@@ -13,7 +13,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gatling.version>2.2.0</gatling.version>
         <gatling-plugin.version>2.2.0</gatling-plugin.version>
-        <aws.version>1.10.75</aws.version>
+        <aws.version>1.11.8</aws.version>
+        <sshj.version>0.16.0</sshj.version>
     </properties>
     <licenses>
         <license>
@@ -45,7 +46,7 @@
         <dependency>
             <groupId>com.hierynomus</groupId>
             <artifactId>sshj</artifactId>
-            <version>0.15.0</version>
+            <version>${sshj.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
