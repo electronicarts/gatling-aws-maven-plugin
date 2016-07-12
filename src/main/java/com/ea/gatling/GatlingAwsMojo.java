@@ -202,7 +202,10 @@ public class GatlingAwsMojo extends AbstractMojo {
             System.out.format("Trying to upload simulation to S3 location %s/%s/%s%n", s3Bucket, s3Subfolder, testName);
             runner.uploadToS3(s3Bucket, s3Subfolder + "/" + testName, new File(gatlingLocalResultsDir + File.separator + testName));
 
-            final String url = String.format("https://s3-%s.amazonaws.com/%s/%s/%s/index.html", s3Region, s3Bucket, s3Subfolder, testName);
+            // us-east-1 has no prefix - http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
+            final String url = ("us-east-1".equalsIgnoreCase(s3Region))
+                    ? String.format("https://s3.amazonaws.com/%s/%s/%s/index.html", s3Bucket, s3Subfolder, testName)
+                    : String.format("https://s3-%s.amazonaws.com/%s/%s/%s/index.html", s3Region, s3Bucket, s3Subfolder, testName);
             System.out.format("Results are on %s%n", url);
 
             // Write the results URL into a file. This provides the URL to external tools which might want to link to the results.
