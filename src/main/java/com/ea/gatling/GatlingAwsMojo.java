@@ -10,6 +10,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.codehaus.plexus.util.FileUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -205,7 +206,11 @@ public class GatlingAwsMojo extends AbstractMojo {
             System.out.format("Results are on %s%n", url);
 
             // Write the results URL into a file. This provides the URL to external tools which might want to link to the results.
-            System.out.println(executeCommand("echo " + url + " >> results.txt"));
+            try {
+                FileUtils.fileWrite("results.txt", url);
+            } catch (IOException e){
+                System.err.println("Can't write result address: " + e);
+            }
         } else {
             System.out.println("Skipping upload to S3.");
         }
