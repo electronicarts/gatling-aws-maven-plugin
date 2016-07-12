@@ -4,6 +4,8 @@
 package com.ea.gatling;
 
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.Tag;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -60,6 +62,12 @@ public class GatlingAwsMojo extends AbstractMojo {
 
     @Parameter(property = "ec2.end.point", defaultValue="https://ec2.us-east-1.amazonaws.com")
     private String ec2EndPoint;
+
+    @Parameter(property = "ec2.tag.name", defaultValue = "Name")
+    private String ec2TagName;
+
+    @Parameter(property = "ec2.tag.value", defaultValue = "Gatling Load Generator")
+    private String ec2TagValue;
 
     @Parameter(property = "ssh.private.key", defaultValue = "${user.home}/gatling-private-key.pem")
     private File sshPrivateKey;
@@ -120,6 +128,7 @@ public class GatlingAwsMojo extends AbstractMojo {
 
     public void execute() throws MojoExecutionException {
         AwsGatlingRunner runner = new AwsGatlingRunner(ec2EndPoint);
+        runner.setInstanceTag(new Tag(ec2TagName, ec2TagValue));
 
         Map<String, Instance> instances = runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroup, ec2AmiId);
         ConcurrentHashMap<String, Boolean> successfulHosts = new ConcurrentHashMap<String, Boolean>();
