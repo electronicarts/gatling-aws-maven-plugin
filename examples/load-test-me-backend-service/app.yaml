@@ -1,17 +1,10 @@
 # Copyright (C) 2016 Electronic Arts Inc. All rights reserved.
 runtime: go
-vm: true
 api_version: go1
+application: load-test-me
+version: 1
 
 handlers:
 - url: /.*
   script: _go_app
 
-automatic_scaling:
-  min_num_instances: 1
-  max_num_instances: 1
-
-resources:
-  cpu: .1
-  memory_gb: .1
-  disk_size_gb: 10
