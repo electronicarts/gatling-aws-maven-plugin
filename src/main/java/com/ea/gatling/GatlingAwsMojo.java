@@ -4,10 +4,13 @@
 package com.ea.gatling;
 
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.Tag;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.codehaus.plexus.util.FileUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -60,6 +63,12 @@ public class GatlingAwsMojo extends AbstractMojo {
 
     @Parameter(property = "ec2.end.point", defaultValue="https://ec2.us-east-1.amazonaws.com")
     private String ec2EndPoint;
+
+    @Parameter(property = "ec2.tag.name", defaultValue = "Name")
+    private String ec2TagName;
+
+    @Parameter(property = "ec2.tag.value", defaultValue = "Gatling Load Generator")
+    private String ec2TagValue;
 
     @Parameter(property = "ssh.private.key", defaultValue = "${user.home}/gatling-private-key.pem")
     private File sshPrivateKey;
@@ -120,6 +129,7 @@ public class GatlingAwsMojo extends AbstractMojo {
 
     public void execute() throws MojoExecutionException {
         AwsGatlingRunner runner = new AwsGatlingRunner(ec2EndPoint);
+        runner.setInstanceTag(new Tag(ec2TagName, ec2TagValue));
 
         Map<String, Instance> instances = runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroup, ec2AmiId);
         ConcurrentHashMap<String, Boolean> successfulHosts = new ConcurrentHashMap<String, Boolean>();
@@ -192,11 +202,18 @@ public class GatlingAwsMojo extends AbstractMojo {
             System.out.format("Trying to upload simulation to S3 location %s/%s/%s%n", s3Bucket, s3Subfolder, testName);
             runner.uploadToS3(s3Bucket, s3Subfolder + "/" + testName, new File(gatlingLocalResultsDir + File.separator + testName));
 
-            final String url = String.format("https://s3-%s.amazonaws.com/%s/%s/%s/index.html", s3Region, s3Bucket, s3Subfolder, testName);
+            // us-east-1 has no prefix - http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
+            final String url = ("us-east-1".equalsIgnoreCase(s3Region))
+                    ? String.format("https://s3.amazonaws.com/%s/%s/%s/index.html", s3Bucket, s3Subfolder, testName)
+                    : String.format("https://s3-%s.amazonaws.com/%s/%s/%s/index.html", s3Region, s3Bucket, s3Subfolder, testName);
             System.out.format("Results are on %s%n", url);
 
             // Write the results URL into a file. This provides the URL to external tools which might want to link to the results.
-            System.out.println(executeCommand("echo " + url + " >> results.txt"));
+            try {
+                FileUtils.fileWrite("results.txt", url);
+            } catch (IOException e){
+                System.err.println("Can't write result address: " + e);
+            }
         } else {
             System.out.println("Skipping upload to S3.");
         }

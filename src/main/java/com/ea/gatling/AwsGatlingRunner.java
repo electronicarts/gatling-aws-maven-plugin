@@ -20,10 +20,10 @@ import java.util.Map;
 
 public class AwsGatlingRunner {
 
-    private static final Tag GATLING_NAME_TAG = new Tag("Name", "Gatling Load Generator");
     private static final int INSTANCE_STATUS_SLEEP_MS = 16 * 1000;
     private final AmazonEC2Client ec2client;
     private TransferManager transferManager;
+    private Tag instanceTag = new Tag("Name", "Gatling Load Generator");
 
     public AwsGatlingRunner(final String endpoint) {
         final AWSCredentialsProviderChain credentials = new AWSCredentialsProviderChain(
@@ -72,7 +72,7 @@ public class AwsGatlingRunner {
             // Tag instances on creation. Adding the tag enables us to ensure we are terminating a load generator instance.
             ec2client.createTags(new CreateTagsRequest()
                     .withResources(instances.keySet())
-                    .withTags(GATLING_NAME_TAG));
+                    .withTags(instanceTag));
 
             DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(instances.keySet());
 
@@ -121,7 +121,7 @@ public class AwsGatlingRunner {
         // Setup a filter to find any previously generated EC2 instances.
         Filter[] filters = new Filter[3];
 
-        filters[0] = new Filter("tag:Name").withValues(GATLING_NAME_TAG.getValue());
+        filters[0] = new Filter("tag:" + instanceTag.getKey()).withValues(instanceTag.getValue());
         filters[1] = new Filter("instance-state-name").withValues("running");
         filters[2] = new Filter("instance-type").withValues(instanceType);
 
@@ -133,7 +133,7 @@ public class AwsGatlingRunner {
 
         for (Reservation reservation : describeInstancesResult.getReservations()) {
             for (Instance instance : reservation.getInstances()) {
-                if (!hasTag(instance, GATLING_NAME_TAG)) {
+                if (!hasTag(instance, instanceTag)) {
                     System.out.format("Aborting since instance %s does not look like a gatling load generator.%n", instance.getInstanceId());
                     return;
                 }
@@ -178,6 +178,11 @@ public class AwsGatlingRunner {
             }
         }
         return false;
+    }
+
+    public void setInstanceTag(final Tag instanceTag)
+    {
+        this.instanceTag = instanceTag;
     }
 
     private void sleep(long timeMs) {
