@@ -54,6 +54,12 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "ec2.security.group", defaultValue = "gatling-security-group")
     private String ec2SecurityGroup;
 
+    @Parameter(property = "ec2.security.group.id")
+    private String ec2SecurityGroupId;
+
+    @Parameter(property = "ec2.subnet.id")
+    private String ec2SubnetId;
+
     @Parameter(property = "ec2.force.termination", defaultValue = "false")
     private boolean ec2ForceTermination = false;
 
@@ -131,7 +137,9 @@ public class GatlingAwsMojo extends AbstractMojo {
         AwsGatlingRunner runner = new AwsGatlingRunner(ec2EndPoint);
         runner.setInstanceTag(new Tag(ec2TagName, ec2TagValue));
 
-        Map<String, Instance> instances = runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroup, ec2AmiId);
+        Map<String, Instance> instances = ec2SecurityGroupId != null
+                ? runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroupId, ec2SubnetId, ec2AmiId)
+                : runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroup, ec2AmiId);
         ConcurrentHashMap<String, Boolean> successfulHosts = new ConcurrentHashMap<String, Boolean>();
 
         // launch all tests in parallel

@@ -37,7 +37,43 @@ public class AwsGatlingRunner {
         transferManager = new TransferManager(credentials);
     }
 
-    public Map<String, Instance> launchEC2Instances(String instanceType, int instanceCount, String ec2KeyPairName, String ec2SecurityGroup, String amiId) {
+    public Map<String, Instance> launchEC2Instances(final String instanceType, final int instanceCount, final String ec2KeyPairName, final String ec2SecurityGroup, final String amiId) {
+        System.out.println(String.format("Did not find any existing instances, starting new ones with security group: '%s'", ec2SecurityGroup));
+        return launchEC2Instances(instanceType,
+                new RunInstancesRequestBuilder() {
+                    public RunInstancesRequest build() {
+                        return new RunInstancesRequest()
+                                .withImageId(amiId)
+                                .withInstanceType(instanceType)
+                                .withMinCount(instanceCount)
+                                .withMaxCount(instanceCount)
+                                .withKeyName(ec2KeyPairName)
+                                .withSecurityGroups(ec2SecurityGroup);
+
+                    }
+                }
+        );
+    }
+
+    public Map<String, Instance> launchEC2Instances(final String instanceType, final int instanceCount, final String ec2KeyPairName, final String ec2SecurityGroupId, final String ec2SubnetId, final String amiId) {
+        System.out.println(String.format("Did not find any existing instances, starting new ones with security group id: '%s' and subnet: '%s'", ec2SecurityGroupId, ec2SubnetId));
+        return launchEC2Instances(instanceType,
+                new RunInstancesRequestBuilder() {
+                    public RunInstancesRequest build() {
+                        return new RunInstancesRequest()
+                                .withImageId(amiId)
+                                .withInstanceType(instanceType)
+                                .withMinCount(instanceCount)
+                                .withMaxCount(instanceCount)
+                                .withKeyName(ec2KeyPairName)
+                                .withSecurityGroupIds(ec2SecurityGroupId)
+                                .withSubnetId(ec2SubnetId);
+                    }
+                }
+        );
+    }
+
+    private Map<String, Instance> launchEC2Instances(String instanceType, RunInstancesRequestBuilder runInstancesRequestBuilder) {
         Map<String, Instance> instances = new HashMap<String, Instance>();
 
         DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest()
@@ -54,15 +90,7 @@ public class AwsGatlingRunner {
 
         // If instances is empty, that means we did not find any to reuse so let's create them
         if (instances.isEmpty()) {
-            System.out.println("Did not find any existing instances, starting new ones.");
-
-            RunInstancesResult runInstancesResult = ec2client.runInstances(new RunInstancesRequest()
-                    .withImageId(amiId)
-                    .withInstanceType(instanceType)
-                    .withMinCount(instanceCount)
-                    .withMaxCount(instanceCount)
-                    .withKeyName(ec2KeyPairName)
-                    .withSecurityGroups(ec2SecurityGroup));
+            RunInstancesResult runInstancesResult = ec2client.runInstances(runInstancesRequestBuilder.build());
 
             for (Instance instance : runInstancesResult.getReservation().getInstances()) {
                 System.out.println(instance.getInstanceId() + " launched");
@@ -190,5 +218,9 @@ public class AwsGatlingRunner {
             Thread.sleep(timeMs);
         } catch (InterruptedException e) {
         }
+    }
+
+    private interface RunInstancesRequestBuilder {
+        RunInstancesRequest build();
     }
 }
