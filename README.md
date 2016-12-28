@@ -181,7 +181,7 @@ rm -rf gatling-charts-highcharts-bundle-${GATLING_VERSION}/user-files/simulation
       <plugin>
         <groupId>com.ea.gatling</groupId>
         <artifactId>gatling-aws-maven-plugin</artifactId>
-        <version>0.23</version>
+        <version>1.0.6</version>
         <configuration>
           <simulationOptions>
             <custom.simulation.option>some value</custom.simulation.option>
