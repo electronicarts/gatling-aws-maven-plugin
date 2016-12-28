@@ -13,8 +13,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gatling.version>2.2.0</gatling.version>
         <gatling-plugin.version>2.2.0</gatling-plugin.version>
-        <aws.version>1.11.52</aws.version>
-        <sshj.version>0.18.0</sshj.version>
+        <aws.version>1.11.73</aws.version>
+        <sshj.version>0.19.0</sshj.version>
     </properties>
     <licenses>
         <license>
