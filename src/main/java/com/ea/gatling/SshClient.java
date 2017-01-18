@@ -3,6 +3,8 @@
  */
 package com.ea.gatling;
 
+import net.schmizz.sshj.Config;
+import net.schmizz.sshj.DefaultConfig;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Session.Command;
@@ -16,6 +18,8 @@ public class SshClient {
     private static final long MAX_ATTEMPTS = 8;
     private static final long INITIAL_SLEEP_TIME_MS = 100;
     private static final long BACKOFF_FACTOR = 2;
+
+    private static final Config DEFAULT_CONFIG = new DefaultConfig();
 
     public static void scpUpload(String host, String user, String privateKeyPath, String localFile, String remoteDir) throws IOException {
         SSHClient ssh = getSshClient(host, user, privateKeyPath);
@@ -112,7 +116,7 @@ public class SshClient {
 
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                SSHClient ssh = new SSHClient();
+                SSHClient ssh = new SSHClient(DEFAULT_CONFIG);
                 ssh.addHostKeyVerifier(new PromiscuousVerifier());
                 ssh.connect(host);
                 ssh.authPublickey(user, privateKeyPath);
