@@ -21,6 +21,8 @@ import java.util.Map;
 public class AwsGatlingRunner {
 
     private static final int INSTANCE_STATUS_SLEEP_MS = 16 * 1000;
+    private static final long S3_UPLOAD_TIMEOUT_MS = 60 * 1000;
+
     private final AmazonEC2Client ec2client;
     private TransferManager transferManager;
     private Tag instanceTag = new Tag("Name", "Gatling Load Generator");
@@ -175,15 +177,23 @@ public class AwsGatlingRunner {
 
     public void uploadToS3(String s3bucket, String targetDirectory, File sourceDirectory) {
         // Recursively upload sourceDirectory to targetDirectory.
-        for (File file : sourceDirectory.listFiles()) {
+        FOR: for (final File file : sourceDirectory.listFiles()) {
             if (file.isDirectory()) {
                 uploadToS3(s3bucket, targetDirectory + "/" + file.getName(), file);
             } else if (file.isFile()) {
-                Upload upload = transferManager.upload(new PutObjectRequest(s3bucket, targetDirectory + "/" + file.getName(), file).withCannedAcl(CannedAccessControlList.PublicRead));
-                System.out.format("Uploading %s%n", file.getAbsolutePath());
+                final long uploadStartTimeMs = System.currentTimeMillis();
+                final Upload upload = transferManager.upload(new PutObjectRequest(s3bucket, targetDirectory + "/" + file.getName(), file).withCannedAcl(CannedAccessControlList.PublicRead));
+                final String path = file.getAbsolutePath();
                 int statusChecks = 0;
 
+                System.out.println("Uploading " + path);
+
                 while (!upload.isDone()) {
+                    if (uploadTimedOut(uploadStartTimeMs)) {
+                        System.err.format("Timed out uploading file to S3 (%s). Will skip file. Report might be incomplete.%n", path);
+                        continue FOR;
+                    }
+
                     sleep(100);
                     if (++statusChecks % 100 == 0) {
                         System.out.format("Still uploading %s%n", file.getAbsolutePath());
@@ -197,6 +207,14 @@ public class AwsGatlingRunner {
                 }
             }
         }
+    }
+
+    /**
+     * @return True if this S3 file upload has timed out. False otherwise.
+     */
+    private boolean uploadTimedOut(final long uploadStartTimeMs) {
+        final long totalUploadTimeMs = System.currentTimeMillis() - uploadStartTimeMs;
+        return totalUploadTimeMs > S3_UPLOAD_TIMEOUT_MS;
     }
 
     private boolean hasTag(Instance instance, Tag theTag) {
