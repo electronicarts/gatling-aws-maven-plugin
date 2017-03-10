@@ -28,12 +28,12 @@ public class AwsGatlingExecutor implements Runnable {
     private final List<String> additionalFiles;
     private final int numInstance;
     private final int instanceCount;
-    private final ConcurrentHashMap<String, Boolean> successfulHosts;
+    private final ConcurrentHashMap<String, Integer> completedHosts;
     private final String gatlingRoot;
     private final String inheritedGatlingJavaOpts;
     private final boolean debugOutputEnabled;
 
-    public AwsGatlingExecutor(String host, File sshPrivateKey, String testName, File installScript, File gatlingSourceDir, String gatlingSimulation, File simulationConfig, Map<String, String> simulationOptions, File gatlingResourcesDir, File gatlingLocalResultsDir, List<String> additionalFiles, int numInstance, int instanceCount, ConcurrentHashMap<String, Boolean> successfulHosts, String gatlingRoot, String inheritedGatlingJavaOpts, boolean debugOutputEnabled) {
+    public AwsGatlingExecutor(String host, File sshPrivateKey, String testName, File installScript, File gatlingSourceDir, String gatlingSimulation, File simulationConfig, Map<String, String> simulationOptions, File gatlingResourcesDir, File gatlingLocalResultsDir, List<String> additionalFiles, int numInstance, int instanceCount, ConcurrentHashMap<String, Integer> completedHosts, String gatlingRoot, String inheritedGatlingJavaOpts, boolean debugOutputEnabled) {
         this.host = host;
         this.sshPrivateKey = sshPrivateKey.getAbsolutePath();
         this.testName = testName;
@@ -47,7 +47,7 @@ public class AwsGatlingExecutor implements Runnable {
         this.gatlingLocalResultsDir = gatlingLocalResultsDir;
         this.numInstance = numInstance;
         this.instanceCount = instanceCount;
-        this.successfulHosts = successfulHosts;
+        this.completedHosts = completedHosts;
         this.gatlingRoot = gatlingRoot;
         this.inheritedGatlingJavaOpts = inheritedGatlingJavaOpts;
         this.debugOutputEnabled = debugOutputEnabled;
@@ -111,7 +111,7 @@ public class AwsGatlingExecutor implements Runnable {
 
         // start test
         // TODO add parameters for test name and description
-        SshClient.executeCommand(host, SSH_USER, sshPrivateKey, String.format("%s %s/bin/gatling.sh -s %s -on %s -rd test -nr -rf results/%s", getJavaOpts(), gatlingRoot, gatlingSimulation, testName, testName), debugOutputEnabled);
+        int resultCode = SshClient.executeCommand(host, SSH_USER, sshPrivateKey, String.format("%s %s/bin/gatling.sh -s %s -on %s -rd test -nr -rf results/%s", getJavaOpts(), gatlingRoot, gatlingSimulation, testName, testName), debugOutputEnabled);
 
         // download report
         log(testName);
@@ -119,7 +119,7 @@ public class AwsGatlingExecutor implements Runnable {
         SshClient.scpDownload(host, SSH_USER, sshPrivateKey, "simulation.log", String.format("%s/%s/simulation-%s.log", gatlingLocalResultsDir.getAbsolutePath(), testName, host));
 
         // Indicate success to the caller. This key will be missing from the map if there were any exceptions.
-        successfulHosts.put(host, true);
+        completedHosts.put(host, resultCode);
     }
 
     private String getJavaOpts() {

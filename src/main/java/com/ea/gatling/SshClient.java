@@ -55,7 +55,7 @@ public class SshClient {
         }
     }
 
-    public static void executeCommand(String host, String user, String privateKeyPath, String command, boolean debugOutputEnabled) throws IOException {
+    public static int executeCommand(String host, String user, String privateKeyPath, String command, boolean debugOutputEnabled) throws IOException {
         SSHClient ssh = getSshClient(host, user, privateKeyPath);
 
         try {
@@ -69,6 +69,7 @@ public class SshClient {
                 readCommandOutput(cmd);
                 cmd.join();
                 printExitCode(cmd.getExitStatus());
+                return cmd.getExitStatus();
             } finally {
                 session.close();
             }
