@@ -133,6 +133,9 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "s3.subfolder", defaultValue = "")
     private String s3Subfolder;
 
+    @Parameter(property = "propage.gatling.failure", defaultValue = "false")
+    private boolean propagateGatlingFailure;
+
     public void execute() throws MojoExecutionException {
         AwsGatlingRunner runner = new AwsGatlingRunner(ec2EndPoint);
         runner.setInstanceTag(new Tag(ec2TagName, ec2TagValue));
@@ -140,7 +143,7 @@ public class GatlingAwsMojo extends AbstractMojo {
         Map<String, Instance> instances = ec2SecurityGroupId != null
                 ? runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroupId, ec2SubnetId, ec2AmiId)
                 : runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroup, ec2AmiId);
-        ConcurrentHashMap<String, Boolean> successfulHosts = new ConcurrentHashMap<String, Boolean>();
+        ConcurrentHashMap<String, Integer> completedHosts = new ConcurrentHashMap<String, Integer>();
 
         // launch all tests in parallel
         ExecutorService executor = Executors.newFixedThreadPool(instanceCount);
@@ -169,7 +172,7 @@ public class GatlingAwsMojo extends AbstractMojo {
                     files,
                     numInstance++,
                     instanceCount,
-                    successfulHosts,
+                    completedHosts,
                     gatlingRoot,
                     gatlingJavaOpts,
                     debugOutputEnabled);
@@ -185,19 +188,15 @@ public class GatlingAwsMojo extends AbstractMojo {
         }
         System.out.println("Finished all threads");
 
-        boolean allHostsSuccessful = successfulHosts.size() == instances.size();
+        int failedInstancesCount = listFailedInstances(instances, completedHosts);
 
         // If the ec2KeepAlive value is true then we need to skip terminating.
-        if ((allHostsSuccessful || ec2ForceTermination) && !ec2KeepAlive) {
+        if ((failedInstancesCount == 0 || ec2ForceTermination) && !ec2KeepAlive) {
             runner.terminateInstances(instances.keySet());
         } else if (ec2KeepAlive) {
             // Send a message out stating the machines are still running
             System.out.println("EC2 instances are still running for the next load test");
-        } else {
-            // One or more hosts were unsuccessful. Keep the load generators running so that we can debug them and download the simulation results manually.
-            listFailedInstances(instances, successfulHosts);
         }
-
 
         // Build report
         // TODO Parameterize heap space to allow generating larger reports
@@ -224,6 +223,10 @@ public class GatlingAwsMojo extends AbstractMojo {
             }
         } else {
             System.out.println("Skipping upload to S3.");
+        }
+        
+        if (propagateGatlingFailure && failedInstancesCount > 0) {
+            throw new MojoExecutionException("Some gatling simulation failed: " + failedInstancesCount);
         }
     }
 
@@ -256,17 +259,22 @@ public class GatlingAwsMojo extends AbstractMojo {
         return output;
     }
 
-    private void listFailedInstances(Map<String, Instance> instances, ConcurrentHashMap<String, Boolean> successfulHosts) {
-        System.out.format("%d load generators were unsuccessful. Hostnames: %n", instances.size() - successfulHosts.size());
+    private int listFailedInstances(Map<String, Instance> instances, ConcurrentHashMap<String, Integer> completedHosts) {
+        int failedInstancesCount = instances.size() - completedHosts.size();
+        System.out.format("%d load generators were unsuccessful. Hostnames: %n", failedInstancesCount);
 
         for (Instance instance : instances.values()) {
             String host = instance.getPrivateDnsName();
 
-            if (!successfulHosts.containsKey(host)) {
+            if (!completedHosts.containsKey(host)) {
                 System.out.println(host);
+            } else if (completedHosts.get(host) != 0) {
+                System.out.println(host);
+                failedInstancesCount++;
             }
         }
 
         System.out.println();
+        return failedInstancesCount;
     }
 }
