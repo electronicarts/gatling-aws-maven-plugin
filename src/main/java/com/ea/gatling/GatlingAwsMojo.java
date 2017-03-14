@@ -133,7 +133,7 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "s3.subfolder", defaultValue = "")
     private String s3Subfolder;
 
-    @Parameter(property = "propage.gatling.failure", defaultValue = "false")
+    @Parameter(property = "propagate.gatling.failure", defaultValue = "false")
     private boolean propagateGatlingFailure;
 
     public void execute() throws MojoExecutionException {
@@ -261,18 +261,18 @@ public class GatlingAwsMojo extends AbstractMojo {
 
     private int listFailedInstances(Map<String, Instance> instances, ConcurrentHashMap<String, Integer> completedHosts) {
         int failedInstancesCount = instances.size() - completedHosts.size();
-        System.out.format("%d load generators were unsuccessful. Hostnames: %n", failedInstancesCount);
 
         for (Instance instance : instances.values()) {
-            String host = instance.getPrivateDnsName();
+            String host = instance.getPublicDnsName();
 
             if (!completedHosts.containsKey(host)) {
-                System.out.println(host);
+                System.out.format("No result collected from hostname: %s%n", host);
             } else if (completedHosts.get(host) != 0) {
-                System.out.println(host);
+                System.out.format("Unsuccessful result code: %d on hostname: %s%n", completedHosts.get(host), host);
                 failedInstancesCount++;
             }
         }
+        System.out.format("Load generators were unsuccessful. Failed instances count: %d%n", failedInstancesCount);
 
         System.out.println();
         return failedInstancesCount;
