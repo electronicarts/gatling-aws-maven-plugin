@@ -136,6 +136,9 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "propagate.gatling.failure", defaultValue = "false")
     private boolean propagateGatlingFailure;
 
+    @Parameter(property = "prefer.private.ip.hostnames", defaultValue = "false")
+    private boolean preferPrivateIpHostnames;
+
     public void execute() throws MojoExecutionException {
         AwsGatlingRunner runner = new AwsGatlingRunner(ec2EndPoint);
         runner.setInstanceTag(new Tag(ec2TagName, ec2TagValue));
@@ -157,7 +160,7 @@ public class GatlingAwsMojo extends AbstractMojo {
         Collection<Instance> values = instances.values();
         int numInstance = 0;
         for (Instance instance : values) {
-            String host = instance.getPublicDnsName();
+            String host = getPreferredHostName(instance);
             Runnable worker = new AwsGatlingExecutor(
                     host,
                     sshPrivateKey,
@@ -263,7 +266,7 @@ public class GatlingAwsMojo extends AbstractMojo {
         int failedInstancesCount = instances.size() - completedHosts.size();
 
         for (Instance instance : instances.values()) {
-            String host = instance.getPublicDnsName();
+            String host = getPreferredHostName(instance);
 
             if (!completedHosts.containsKey(host)) {
                 System.out.format("No result collected from hostname: %s%n", host);
@@ -276,5 +279,13 @@ public class GatlingAwsMojo extends AbstractMojo {
 
         System.out.println();
         return failedInstancesCount;
+    }
+
+    private String getPreferredHostName(Instance instance) {
+        if (preferPrivateIpHostnames) {
+            return instance.getPrivateIpAddress();
+        }
+
+        return instance.getPublicDnsName();
     }
 }
