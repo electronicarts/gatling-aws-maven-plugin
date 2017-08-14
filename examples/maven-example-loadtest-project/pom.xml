@@ -17,8 +17,8 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-		<gatling.version>2.2.0</gatling.version>
-		<gatling-plugin.version>2.2.0</gatling-plugin.version>
+		<gatling.version>2.2.4</gatling.version>
+		<gatling-plugin.version>2.2.4</gatling-plugin.version>
 		<gatling.skip>false</gatling.skip>
 		<!-- Information required to start EC2 instances and control them via SSH -->
 		<ssh.private.key>${user.home}/.ssh/loadtest-keypair.pem</ssh.private.key>
@@ -42,7 +42,7 @@
 		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
-			<version>2.11.4</version>
+			<version>2.11.8</version>
 		</dependency>
 		<dependency>
 			<groupId>io.gatling.highcharts</groupId>
@@ -84,7 +84,7 @@
 			<plugin>
 				<groupId>com.ea.gatling</groupId>
 				<artifactId>gatling-aws-maven-plugin</artifactId>
-				<version>1.0.11</version>
+				<version>1.0.14</version>
 				<configuration>
 					<simulationOptions>
 						<custom.simulation.option>some value</custom.simulation.option>
