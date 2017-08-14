@@ -25,9 +25,9 @@
 		<ec2.key.pair.name>loadtest-keypair</ec2.key.pair.name>
 		<ec2.security.group>gatling-security-group</ec2.security.group>
 		<ec2.instance.count>1</ec2.instance.count>
-		<gatling.local.home>${project.basedir}/gatling/gatling-charts-highcharts-bundle-2.2.0/bin/gatling.sh</gatling.local.home>
+		<gatling.local.home>${project.basedir}/gatling/gatling-charts-highcharts-bundle-${gatling.version}/bin/gatling.sh</gatling.local.home>
 		<gatling.install.script>${project.basedir}/src/test/resources/install-gatling.sh</gatling.install.script>
-		<gatling.root>gatling-charts-highcharts-bundle-2.2.0</gatling.root>
+		<gatling.root>gatling-charts-highcharts-bundle-${gatling.version}</gatling.root>
 		<gatling.java.opts>-Xms1g -Xmx4g</gatling.java.opts>
 		<!-- Fully qualified name of the Gatling simulation and a name describing 
 			the test -->

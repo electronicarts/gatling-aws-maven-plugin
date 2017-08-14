@@ -1,5 +1,5 @@
 #!/bin/sh
-GATLING_VERSION=2.2.0
+GATLING_VERSION=2.2.4
 
 mkdir -p gatling
 cd gatling
