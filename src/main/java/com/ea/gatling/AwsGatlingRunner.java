@@ -42,36 +42,27 @@ public class AwsGatlingRunner {
     public Map<String, Instance> launchEC2Instances(final String instanceType, final int instanceCount, final String ec2KeyPairName, final String ec2SecurityGroup, final String amiId) {
         System.out.println(String.format("Did not find any existing instances, starting new ones with security group: '%s'", ec2SecurityGroup));
         return launchEC2Instances(instanceType,
-                new RunInstancesRequestBuilder() {
-                    public RunInstancesRequest build() {
-                        return new RunInstancesRequest()
-                                .withImageId(amiId)
-                                .withInstanceType(instanceType)
-                                .withMinCount(instanceCount)
-                                .withMaxCount(instanceCount)
-                                .withKeyName(ec2KeyPairName)
-                                .withSecurityGroups(ec2SecurityGroup);
-
-                    }
-                }
+                () -> new RunInstancesRequest()
+                        .withImageId(amiId)
+                        .withInstanceType(instanceType)
+                        .withMinCount(instanceCount)
+                        .withMaxCount(instanceCount)
+                        .withKeyName(ec2KeyPairName)
+                        .withSecurityGroups(ec2SecurityGroup)
         );
     }
 
     public Map<String, Instance> launchEC2Instances(final String instanceType, final int instanceCount, final String ec2KeyPairName, final String ec2SecurityGroupId, final String ec2SubnetId, final String amiId) {
         System.out.println(String.format("Did not find any existing instances, starting new ones with security group id: '%s' and subnet: '%s'", ec2SecurityGroupId, ec2SubnetId));
         return launchEC2Instances(instanceType,
-                new RunInstancesRequestBuilder() {
-                    public RunInstancesRequest build() {
-                        return new RunInstancesRequest()
-                                .withImageId(amiId)
-                                .withInstanceType(instanceType)
-                                .withMinCount(instanceCount)
-                                .withMaxCount(instanceCount)
-                                .withKeyName(ec2KeyPairName)
-                                .withSecurityGroupIds(ec2SecurityGroupId)
-                                .withSubnetId(ec2SubnetId);
-                    }
-                }
+                () -> new RunInstancesRequest()
+                        .withImageId(amiId)
+                        .withInstanceType(instanceType)
+                        .withMinCount(instanceCount)
+                        .withMaxCount(instanceCount)
+                        .withKeyName(ec2KeyPairName)
+                        .withSecurityGroupIds(ec2SecurityGroupId)
+                        .withSubnetId(ec2SubnetId)
         );
     }
 
@@ -149,13 +140,11 @@ public class AwsGatlingRunner {
 
     private Filter[] getInstanceFilters(String instanceType) {
         // Setup a filter to find any previously generated EC2 instances.
-        Filter[] filters = new Filter[3];
-
-        filters[0] = new Filter("tag:" + instanceTag.getKey()).withValues(instanceTag.getValue());
-        filters[1] = new Filter("instance-state-name").withValues("running");
-        filters[2] = new Filter("instance-type").withValues(instanceType);
-
-        return filters;
+        return new Filter[]{
+            new Filter("tag:" + instanceTag.getKey()).withValues(instanceTag.getValue()),
+            new Filter("instance-state-name").withValues("running"),
+            new Filter("instance-type").withValues(instanceType)
+        };
     }
 
     public void terminateInstances(Collection<String> instanceIds) {
@@ -181,9 +170,12 @@ public class AwsGatlingRunner {
             if (file.isDirectory()) {
                 uploadToS3(s3bucket, targetDirectory + "/" + file.getName(), file);
             } else if (file.isFile()) {
-                final long uploadStartTimeMs = System.currentTimeMillis();
-                final Upload upload = transferManager.upload(new PutObjectRequest(s3bucket, targetDirectory + "/" + file.getName(), file).withCannedAcl(CannedAccessControlList.PublicRead));
                 final String path = file.getAbsolutePath();
+                final long uploadStartTimeMs = System.currentTimeMillis();
+                final PutObjectRequest putRequest = new PutObjectRequest(s3bucket, targetDirectory + "/" + file.getName(), file)
+                        .withCannedAcl(CannedAccessControlList.PublicRead);
+
+                final Upload upload = transferManager.upload(putRequest);
                 int statusChecks = 0;
 
                 System.out.println("Uploading " + path);

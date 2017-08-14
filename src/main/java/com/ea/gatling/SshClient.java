@@ -12,6 +12,8 @@ import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 
 public class SshClient {
 
@@ -21,14 +23,24 @@ public class SshClient {
 
     private static final Config DEFAULT_CONFIG = new DefaultConfig();
 
-    public static void scpUpload(String host, String user, String privateKeyPath, String localFile, String remoteDir) throws IOException {
-        SSHClient ssh = getSshClient(host, user, privateKeyPath);
+    public static void scpUpload(HostInfo hostInfo, FromTo fromTo) throws IOException {
+        scpUpload(hostInfo, Arrays.asList(fromTo));
+    }
+
+    /**
+     * Upload one or more files via the same SSH/SCP connection to a remote host.
+     */
+    public static void scpUpload(HostInfo hostInfo, List<FromTo> fromTos) throws IOException {
+        SSHClient ssh = getSshClient(hostInfo);
 
         try {
             Session session = ssh.startSession();
             session.allocateDefaultPTY();
             try {
-                ssh.newSCPFileTransfer().upload(localFile, remoteDir);
+                for (FromTo ft: fromTos) {
+                    System.out.format("SCP cp %s -> %s/%s%n", ft.from, hostInfo.host, ft.to);
+                    ssh.newSCPFileTransfer().upload(ft.from, ft.to);
+                }
             } finally {
                 session.close();
             }
@@ -38,14 +50,15 @@ public class SshClient {
         }
     }
 
-    public static void scpDownload(String host, String user, String privateKeyPath, String remoteFile, String localDir) throws IOException {
-        SSHClient ssh = getSshClient(host, user, privateKeyPath);
+
+    public static void scpDownload(HostInfo hostInfo, FromTo fromTo) throws IOException {
+        SSHClient ssh = getSshClient(hostInfo);
 
         try {
             Session session = ssh.startSession();
             session.allocateDefaultPTY();
             try {
-                ssh.newSCPFileTransfer().download(remoteFile, localDir);
+                ssh.newSCPFileTransfer().download(fromTo.from, fromTo.to);
             } finally {
                 session.close();
             }
@@ -55,8 +68,8 @@ public class SshClient {
         }
     }
 
-    public static int executeCommand(String host, String user, String privateKeyPath, String command, boolean debugOutputEnabled) throws IOException {
-        SSHClient ssh = getSshClient(host, user, privateKeyPath);
+    public static int executeCommand(HostInfo hostInfo, String command, boolean debugOutputEnabled) throws IOException {
+        SSHClient ssh = getSshClient(hostInfo);
 
         try {
             Session session = ssh.startSession();
@@ -112,19 +125,19 @@ public class SshClient {
         }
     }
 
-    private static SSHClient getSshClient(String host, String user, String privateKeyPath) throws IOException {
+    private static SSHClient getSshClient(HostInfo hostInfo) throws IOException {
         long sleepTimeMs = INITIAL_SLEEP_TIME_MS;
 
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
                 SSHClient ssh = new SSHClient(DEFAULT_CONFIG);
                 ssh.addHostKeyVerifier(new PromiscuousVerifier());
-                ssh.connect(host);
-                ssh.authPublickey(user, privateKeyPath);
+                ssh.connect(hostInfo.host);
+                ssh.authPublickey(hostInfo.user, hostInfo.privateKeyPath);
                 ssh.useCompression();
                 return ssh;
             } catch (IOException exception) {
-                System.out.format("Failed to login to host %s as user %s. Exception: %s.%n", host, user, exception.getMessage());
+                System.out.format("Failed to login to host %s as user %s. Exception: %s.%n", hostInfo.host, hostInfo.user, exception.getMessage());
                 System.out.format("Attempt %d of %d. Sleeping for %d ms.%n", attempt, MAX_ATTEMPTS, sleepTimeMs);
 
                 boolean lastAttempt = attempt == MAX_ATTEMPTS;
@@ -141,6 +154,28 @@ public class SshClient {
             }
         }
 
-        throw new RuntimeException(String.format("Unable to login to host %s as user %s after %d attempts.", host, user, MAX_ATTEMPTS));
+        throw new RuntimeException(String.format("Unable to login to host %s as user %s after %d attempts.", hostInfo.host, hostInfo.user, MAX_ATTEMPTS));
+    }
+
+    static class HostInfo {
+        private final String host;
+        private final String user;
+        private final String privateKeyPath;
+
+        public HostInfo(String host, String user, String privateKeyPath) {
+            this.host = host;
+            this.user = user;
+            this.privateKeyPath = privateKeyPath;
+        }
+    }
+
+    static class FromTo {
+        private final String from;
+        private final String to;
+
+        public FromTo(String from, String to) {
+            this.from = from;
+            this.to = to;
+        }
     }
 }
