@@ -100,6 +100,7 @@ rm -rf gatling-charts-highcharts-bundle-${GATLING_VERSION}/user-files/simulation
     <gatling.skip>false</gatling.skip>
 
     <!-- Information required to start EC2 instances and control them via SSH -->
+    <ssh.user>ec2-user</ssh.user>
     <ssh.private.key>${user.home}/.ssh/loadtest.pem</ssh.private.key>
     <ec2.key.pair.name>loadtest-keypair</ec2.key.pair.name>
     <ec2.security.group>default</ec2.security.group>

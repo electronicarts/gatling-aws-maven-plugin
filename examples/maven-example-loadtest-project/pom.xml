@@ -21,6 +21,7 @@
 		<gatling-plugin.version>2.2.4</gatling-plugin.version>
 		<gatling.skip>false</gatling.skip>
 		<!-- Information required to start EC2 instances and control them via SSH -->
+        <ssh.user>ec2-user</ssh.user>
 		<ssh.private.key>${user.home}/.ssh/loadtest-keypair.pem</ssh.private.key>
 		<ec2.key.pair.name>loadtest-keypair</ec2.key.pair.name>
 		<ec2.security.group>gatling-security-group</ec2.security.group>
