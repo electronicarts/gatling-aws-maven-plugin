@@ -11,7 +11,7 @@ sudo yum remove  --quiet --assumeyes java-1.7.0-openjdk.x86_64
 sudo yum install --quiet --assumeyes java-1.8.0-openjdk-devel.x86_64 htop screen
 
 # Install Gatling
-GATLING_VERSION=2.2.0
+GATLING_VERSION=2.2.4
 URL=https://repo1.maven.org/maven2/io/gatling/highcharts/gatling-charts-highcharts-bundle/${GATLING_VERSION}/gatling-charts-highcharts-bundle-${GATLING_VERSION}-bundle.zip
 GATLING_ARCHIVE=gatling-charts-highcharts-bundle-${GATLING_VERSION}-bundle.zip
 
