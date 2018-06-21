@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 
 public class AwsGatlingExecutor implements Runnable {
 
-    private static final String SSH_USER = "ec2-user";
     private static final String[] GATLING_RESOURCES = {"data", "bodies"};
     private static final String DEFAULT_JVM_ARGS = "-Dsun.net.inetaddr.ttl=60";
 
     private final String host;
+    private final String sshUser;
     private final String sshPrivateKey;
     private final String testName;
     private final File installScript;
@@ -35,8 +35,9 @@ public class AwsGatlingExecutor implements Runnable {
     private final String inheritedGatlingJavaOpts;
     private final boolean debugOutputEnabled;
 
-    public AwsGatlingExecutor(String host, File sshPrivateKey, String testName, File installScript, File gatlingSourceDir, String gatlingSimulation, File simulationConfig, Map<String, String> simulationOptions, File gatlingResourcesDir, File gatlingLocalResultsDir, List<String> additionalFiles, int numInstance, int instanceCount, ConcurrentHashMap<String, Integer> completedHosts, String gatlingRoot, String inheritedGatlingJavaOpts, boolean debugOutputEnabled) {
+    public AwsGatlingExecutor(String host,String sshUser, File sshPrivateKey, String testName, File installScript, File gatlingSourceDir, String gatlingSimulation, File simulationConfig, Map<String, String> simulationOptions, File gatlingResourcesDir, File gatlingLocalResultsDir, List<String> additionalFiles, int numInstance, int instanceCount, ConcurrentHashMap<String, Integer> completedHosts, String gatlingRoot, String inheritedGatlingJavaOpts, boolean debugOutputEnabled) {
         this.host = host;
+        this.sshUser = sshUser;
         this.sshPrivateKey = sshPrivateKey.getAbsolutePath();
         this.testName = testName;
         this.installScript = installScript;
@@ -57,7 +58,7 @@ public class AwsGatlingExecutor implements Runnable {
 
     public void runGatlingTest() throws IOException {
         log("started");
-        final SshClient.HostInfo hostInfo = new SshClient.HostInfo(host, SSH_USER, sshPrivateKey);
+        final SshClient.HostInfo hostInfo = new SshClient.HostInfo(host, sshUser, sshPrivateKey);
 
         // copy scripts
         SshClient.scpUpload(hostInfo, new SshClient.FromTo(installScript.getAbsolutePath(), ""));

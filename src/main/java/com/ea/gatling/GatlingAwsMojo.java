@@ -79,6 +79,9 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "ssh.private.key", defaultValue = "${user.home}/gatling-private-key.pem")
     private File sshPrivateKey;
 
+    @Parameter(property = "ssh.user", defaultValue = "ec2-user")
+    private String sshUser;
+
     @Parameter(property = "debug.output.enabled", defaultValue = "false")
     private boolean debugOutputEnabled = false;
 
@@ -163,6 +166,7 @@ public class GatlingAwsMojo extends AbstractMojo {
             String host = getPreferredHostName(instance);
             Runnable worker = new AwsGatlingExecutor(
                     host,
+                    sshUser,
                     sshPrivateKey,
                     testName,
                     installScript,
