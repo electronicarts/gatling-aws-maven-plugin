@@ -67,7 +67,7 @@ public class AwsGatlingRunner {
     }
 
     private Map<String, Instance> launchEC2Instances(String instanceType, RunInstancesRequestBuilder runInstancesRequestBuilder) {
-        Map<String, Instance> instances = new HashMap<String, Instance>();
+        Map<String, Instance> instances = new HashMap<>();
 
         DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest()
                 .withFilters(getInstanceFilters(instanceType)));

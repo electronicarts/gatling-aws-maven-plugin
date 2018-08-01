@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -23,7 +22,6 @@ public class AwsGatlingExecutor implements Runnable {
     private final File installScript;
     private final File gatlingSourceDir;
     private final String gatlingSimulation;
-    private final Map<String, String> simulationOptions;
     private final File gatlingResourcesDir;
     private final File gatlingLocalResultsDir;
     private final File simulationConfig;
@@ -35,7 +33,7 @@ public class AwsGatlingExecutor implements Runnable {
     private final String inheritedGatlingJavaOpts;
     private final boolean debugOutputEnabled;
 
-    public AwsGatlingExecutor(String host,String sshUser, File sshPrivateKey, String testName, File installScript, File gatlingSourceDir, String gatlingSimulation, File simulationConfig, Map<String, String> simulationOptions, File gatlingResourcesDir, File gatlingLocalResultsDir, List<String> additionalFiles, int numInstance, int instanceCount, ConcurrentHashMap<String, Integer> completedHosts, String gatlingRoot, String inheritedGatlingJavaOpts, boolean debugOutputEnabled) {
+    public AwsGatlingExecutor(String host,String sshUser, File sshPrivateKey, String testName, File installScript, File gatlingSourceDir, String gatlingSimulation, File simulationConfig, File gatlingResourcesDir, File gatlingLocalResultsDir, List<String> additionalFiles, int numInstance, int instanceCount, ConcurrentHashMap<String, Integer> completedHosts, String gatlingRoot, String inheritedGatlingJavaOpts, boolean debugOutputEnabled) {
         this.host = host;
         this.sshUser = sshUser;
         this.sshPrivateKey = sshPrivateKey.getAbsolutePath();
@@ -45,7 +43,6 @@ public class AwsGatlingExecutor implements Runnable {
         this.gatlingSourceDir = gatlingSourceDir;
         this.gatlingSimulation = gatlingSimulation;
         this.simulationConfig = simulationConfig;
-        this.simulationOptions = simulationOptions;
         this.gatlingResourcesDir = gatlingResourcesDir;
         this.gatlingLocalResultsDir = gatlingLocalResultsDir;
         this.numInstance = numInstance;

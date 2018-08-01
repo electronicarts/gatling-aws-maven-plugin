@@ -103,9 +103,6 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "path.config.file", defaultValue = "${project.basedir}/src/test/resources/config.properties")
     private File simulationConfig;
 
-    @Parameter
-    private Map<String, String> simulationOptions;
-
     @Parameter(property = "gatling.local.results", defaultValue = "${project.build.directory}/gatling/results")
     private File gatlingLocalResultsDir;
 
@@ -173,7 +170,6 @@ public class GatlingAwsMojo extends AbstractMojo {
                     gatlingSourceDir,
                     gatlingSimulation,
                     simulationConfig,
-                    simulationOptions,
                     gatlingResourcesDir,
                     gatlingLocalResultsDir,
                     files,
@@ -206,7 +202,6 @@ public class GatlingAwsMojo extends AbstractMojo {
         }
 
         // Build report
-        // TODO Parameterize heap space to allow generating larger reports
         String reportCommand = String.format("%s -ro %s/%s", gatlingLocalHome, gatlingLocalResultsDir, testName);
         System.out.format("Report command: %s%n", reportCommand);
         System.out.println(executeCommand(reportCommand));
@@ -216,14 +211,11 @@ public class GatlingAwsMojo extends AbstractMojo {
             System.out.format("Trying to upload simulation to S3 location %s/%s/%s%n", s3Bucket, s3Subfolder, testName);
             runner.uploadToS3(s3Bucket, s3Subfolder + "/" + testName, new File(gatlingLocalResultsDir + File.separator + testName));
 
-            // us-east-1 has no prefix - http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
-            final String url = ("us-east-1".equalsIgnoreCase(s3Region))
-                    ? String.format("https://s3.amazonaws.com/%s/%s/%s/index.html", s3Bucket, s3Subfolder, testName)
-                    : String.format("https://s3-%s.amazonaws.com/%s/%s/%s/index.html", s3Region, s3Bucket, s3Subfolder, testName);
+            final String url = getS3Url();
             System.out.format("Results are on %s%n", url);
 
-            // Write the results URL into a file. This provides the URL to external tools which might want to link to the results.
             try {
+                // Write the results URL into a file. This provides the URL to external tools which might want to link to the results.
                 FileUtils.fileWrite("results.txt", url);
             } catch (IOException e){
                 System.err.println("Can't write result address: " + e);
@@ -231,10 +223,18 @@ public class GatlingAwsMojo extends AbstractMojo {
         } else {
             System.out.println("Skipping upload to S3.");
         }
-        
+
         if (propagateGatlingFailure && failedInstancesCount > 0) {
             throw new MojoExecutionException("Some gatling simulation failed: " + failedInstancesCount);
         }
+    }
+
+    private String getS3Url() {
+        if ("us-east-1".equalsIgnoreCase(s3Region)) {
+            // us-east-1 has no prefix - http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
+            return String.format("https://s3.amazonaws.com/%s/%s/%s/index.html", s3Bucket, s3Subfolder, testName);
+        }
+        return String.format("https://s3-%s.amazonaws.com/%s/%s/%s/index.html", s3Region, s3Bucket, s3Subfolder, testName);
     }
 
     private String executeCommand(String command) {
