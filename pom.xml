@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gatling.version>2.3.1</gatling.version>
         <gatling-plugin.version>2.3.1</gatling-plugin.version>
-        <aws.version>1.11.377</aws.version>
+        <aws.version>1.11.396</aws.version>
         <sshj.version>0.26.0</sshj.version>
         <maven.plugin.api.version>3.5.4</maven.plugin.api.version>
         <maven.plugin.annotations>3.5.2</maven.plugin.annotations>
