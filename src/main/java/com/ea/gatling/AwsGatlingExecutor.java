@@ -32,8 +32,10 @@ public class AwsGatlingExecutor implements Runnable {
     private final String gatlingRoot;
     private final String inheritedGatlingJavaOpts;
     private final boolean debugOutputEnabled;
+    private final boolean runDetached;
+    private final boolean killProcess;
 
-    public AwsGatlingExecutor(String host,String sshUser, File sshPrivateKey, String testName, File installScript, File gatlingSourceDir, String gatlingSimulation, File simulationConfig, File gatlingResourcesDir, File gatlingLocalResultsDir, List<String> additionalFiles, int numInstance, int instanceCount, ConcurrentHashMap<String, Integer> completedHosts, String gatlingRoot, String inheritedGatlingJavaOpts, boolean debugOutputEnabled) {
+    public AwsGatlingExecutor(String host,String sshUser, File sshPrivateKey, String testName, File installScript, File gatlingSourceDir, String gatlingSimulation, File simulationConfig, File gatlingResourcesDir, File gatlingLocalResultsDir, List<String> additionalFiles, int numInstance, int instanceCount, ConcurrentHashMap<String, Integer> completedHosts, String gatlingRoot, String inheritedGatlingJavaOpts, boolean debugOutputEnabled, boolean runDetached, boolean killProcess) {
         this.host = host;
         this.sshUser = sshUser;
         this.sshPrivateKey = sshPrivateKey.getAbsolutePath();
@@ -51,11 +53,26 @@ public class AwsGatlingExecutor implements Runnable {
         this.gatlingRoot = gatlingRoot;
         this.inheritedGatlingJavaOpts = inheritedGatlingJavaOpts;
         this.debugOutputEnabled = debugOutputEnabled;
+        this.runDetached = runDetached;
+        this.killProcess = killProcess;
     }
 
     public void runGatlingTest() throws IOException {
         log("started");
         final SshClient.HostInfo hostInfo = new SshClient.HostInfo(host, sshUser, sshPrivateKey);
+
+        int resultCode = -1;
+        if (!killProcess) {
+            resultCode = this.runProcess(hostInfo);
+        } else {
+            resultCode = this.killProcess(hostInfo);
+        }
+
+        // Indicate success to the caller. This key will be missing from the map if there were any exceptions.
+        completedHosts.put(host, resultCode);
+    }
+
+    private int runProcess(final SshClient.HostInfo hostInfo) throws IOException {
 
         // copy scripts
         SshClient.scpUpload(hostInfo, new SshClient.FromTo(installScript.getAbsolutePath(), ""));
@@ -107,15 +124,29 @@ public class AwsGatlingExecutor implements Runnable {
 
         // start test
         // TODO add parameters for test name and description
-        int resultCode = SshClient.executeCommand(hostInfo, String.format("%s %s/bin/gatling.sh -s %s -on %s -rd test -nr -rf results/%s", getJavaOpts(), gatlingRoot, gatlingSimulation, testName, testName), debugOutputEnabled);
+        final String coreCommand = String.format("%s %s/bin/gatling.sh -s %s -on %s -rd test -nr -rf results/%s", getJavaOpts(), gatlingRoot, gatlingSimulation, testName, testName);
+        final String command = String.format("%s%s%s", (runDetached ? "nohup sh -c '" : ""), coreCommand, (runDetached ? "' &> /dev/null & sleep 5 && echo $(/sbin/pidof java) > gatling.pid" : ""));
+        int resultCode = SshClient.executeCommand(hostInfo, command, debugOutputEnabled);
 
-        // download report
-        log(testName);
-        SshClient.executeCommand(hostInfo, String.format("mv %s/results/%s/*/simulation.log simulation.log", gatlingRoot, testName), debugOutputEnabled);
-        SshClient.scpDownload(hostInfo, new SshClient.FromTo("simulation.log", String.format("%s/%s/simulation-%s.log", gatlingLocalResultsDir.getAbsolutePath(), testName, host)));
+        if (!this.runDetached) {
+            // download report
+            log(testName);
+            SshClient.executeCommand(hostInfo,
+                    String.format("mv %s/results/%s/*/simulation.log simulation.log", gatlingRoot, testName),
+                    debugOutputEnabled);
+            SshClient.scpDownload(hostInfo, new SshClient.FromTo("simulation.log",
+                    String.format("%s/%s/simulation-%s.log", gatlingLocalResultsDir.getAbsolutePath(), testName, host)));
+        }
 
-        // Indicate success to the caller. This key will be missing from the map if there were any exceptions.
-        completedHosts.put(host, resultCode);
+        return resultCode;
+    }
+
+    private int killProcess(final SshClient.HostInfo hostInfo) throws IOException {
+        int resultCode = SshClient.executeCommand(hostInfo,"kill `cat gatling.pid`", debugOutputEnabled);
+        if (resultCode == 1) {
+            resultCode = SshClient.executeCommand(hostInfo, "rm gatling.pid", debugOutputEnabled);
+        }
+        return resultCode;
     }
 
     private String getJavaOpts() {

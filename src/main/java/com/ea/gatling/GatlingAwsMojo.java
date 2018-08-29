@@ -67,6 +67,25 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "ec2.keep.alive", defaultValue="false")
     private boolean ec2KeepAlive = false;
 
+    /**
+     * When true, this will run Gatling detached, and disconnect from SSH while Gatling is running.  Leaves a
+     *    file called 'gatling.pid' with the pid of the java process in it.
+     * ec2.keep.alive ignored when set to true
+     * ec2.force.termination ignored when set to true
+     * All output turned off
+     */
+    @Parameter(property = "ec2.execute.detached", defaultValue = "false")
+    private boolean ec2ExecuteDetached = false;
+
+    /**
+     * When true, if a 'gatling.pid' file is found, then the pid will be killed.  This is to be used in conjunction with
+     *    'ec2.execute.detached' to allow the process to be killed easily.
+     * Only ec2 connect variables will be used.
+     * ignores ec2.execute.detached
+     */
+    @Parameter(property = "ec2.kill.process", defaultValue = "false")
+    private boolean ec2KillProcess;
+
     @Parameter(property = "ec2.end.point", defaultValue="https://ec2.us-east-1.amazonaws.com")
     private String ec2EndPoint;
 
@@ -144,8 +163,8 @@ public class GatlingAwsMojo extends AbstractMojo {
         runner.setInstanceTag(new Tag(ec2TagName, ec2TagValue));
 
         Map<String, Instance> instances = ec2SecurityGroupId != null
-                ? runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroupId, ec2SubnetId, ec2AmiId)
-                : runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroup, ec2AmiId);
+                ? runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroupId, ec2SubnetId, ec2AmiId, !ec2KillProcess)
+                : runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroup, ec2AmiId, !ec2KillProcess);
         ConcurrentHashMap<String, Integer> completedHosts = new ConcurrentHashMap<String, Integer>();
 
         // launch all tests in parallel
@@ -178,7 +197,9 @@ public class GatlingAwsMojo extends AbstractMojo {
                     completedHosts,
                     gatlingRoot,
                     gatlingJavaOpts,
-                    debugOutputEnabled);
+                    debugOutputEnabled,
+                    ec2ExecuteDetached,
+                    ec2KillProcess);
             executor.execute(worker);
         }
         executor.shutdown();
@@ -194,34 +215,42 @@ public class GatlingAwsMojo extends AbstractMojo {
         int failedInstancesCount = listFailedInstances(instances, completedHosts);
 
         // If the ec2KeepAlive value is true then we need to skip terminating.
-        if ((failedInstancesCount == 0 || ec2ForceTermination) && !ec2KeepAlive) {
+        if ((failedInstancesCount == 0 || ec2ForceTermination) && !ec2KeepAlive && (!ec2ExecuteDetached || ec2KillProcess)) {
             runner.terminateInstances(instances.keySet());
         } else if (ec2KeepAlive) {
             // Send a message out stating the machines are still running
             System.out.println("EC2 instances are still running for the next load test");
+        } else if (ec2ExecuteDetached) {
+            System.out.println("EC2 instances are running detached");
         }
 
-        // Build report
-        String reportCommand = String.format("%s -ro %s/%s", gatlingLocalHome, gatlingLocalResultsDir, testName);
-        System.out.format("Report command: %s%n", reportCommand);
-        System.out.println(executeCommand(reportCommand));
+        if (!ec2ExecuteDetached && !ec2KillProcess) {
+            // Build report
+            String reportCommand = String.format("%s -ro %s/%s", gatlingLocalHome, gatlingLocalResultsDir, testName);
+            System.out.format("Report command: %s%n", reportCommand);
+            System.out.println(executeCommand(reportCommand));
 
-        // Upload report to S3
-        if (s3UploadEnabled) {
-            System.out.format("Trying to upload simulation to S3 location %s/%s/%s%n", s3Bucket, s3Subfolder, testName);
-            runner.uploadToS3(s3Bucket, s3Subfolder + "/" + testName, new File(gatlingLocalResultsDir + File.separator + testName));
+            // Upload report to S3
+            if (s3UploadEnabled) {
+                System.out.format("Trying to upload simulation to S3 location %s/%s/%s%n", s3Bucket, s3Subfolder,
+                        testName);
+                runner.uploadToS3(s3Bucket, s3Subfolder + "/" + testName,
+                        new File(gatlingLocalResultsDir + File.separator + testName));
 
-            final String url = getS3Url();
-            System.out.format("Results are on %s%n", url);
+                final String url = getS3Url();
+                System.out.format("Results are on %s%n", url);
 
-            try {
-                // Write the results URL into a file. This provides the URL to external tools which might want to link to the results.
-                FileUtils.fileWrite("results.txt", url);
-            } catch (IOException e){
-                System.err.println("Can't write result address: " + e);
+                try {
+                    // Write the results URL into a file. This provides the URL to external tools which might want to link to the results.
+                    FileUtils.fileWrite("results.txt", url);
+                } catch (IOException e) {
+                    System.err.println("Can't write result address: " + e);
+                }
+            } else {
+                System.out.println("Skipping upload to S3.");
             }
         } else {
-            System.out.println("Skipping upload to S3.");
+            System.out.println("Running detached or killing detached process, no reports available.");
         }
 
         if (propagateGatlingFailure && failedInstancesCount > 0) {
