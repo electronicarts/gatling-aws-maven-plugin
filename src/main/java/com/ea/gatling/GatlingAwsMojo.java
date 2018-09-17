@@ -6,7 +6,6 @@ package com.ea.gatling;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.Tag;
 
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -27,54 +26,11 @@ import java.util.concurrent.Executors;
  * Runs gatling script on remote EC2 instances.
  */
 @Mojo(name = "execute")
-public class GatlingAwsMojo extends AbstractMojo {
+public class GatlingAwsMojo extends BaseAwsMojo {
     /**
      * The time in milliseconds between checking for the termination of all executors running load tests.
      */
     private static final int SLEEP_TIME_TERMINATION_MS = 1000;
-
-    @Parameter(property = "ec2.instance.count", defaultValue = "1")
-    private Integer instanceCount;
-
-    @Parameter(property = "ec2.instance.type", defaultValue = "m3.medium")
-    private String instanceType;
-
-    /**
-     * ID of the Amazon Machine Image to be used. Defaults to Amazon Linux.
-     */
-    @Parameter(property = "ec2.ami.id", defaultValue = "ami-b66ed3de")
-    private String ec2AmiId;
-
-    @Parameter(property = "ec2.key.pair.name", defaultValue = "gatling-key-pair")
-    private String ec2KeyPairName;
-
-    /**
-     * Create a security group for the Gatling EC2 instances. Ensure it allows inbound SSH traffic to your IP address range.
-     */
-    @Parameter(property = "ec2.security.group", defaultValue = "gatling-security-group")
-    private String ec2SecurityGroup;
-
-    @Parameter(property = "ec2.security.group.id")
-    private String ec2SecurityGroupId;
-
-    @Parameter(property = "ec2.subnet.id")
-    private String ec2SubnetId;
-
-    @Parameter(property = "ec2.force.termination", defaultValue = "false")
-    private boolean ec2ForceTermination = false;
-
-    // This parameter, when set to true, will override the ec2ForceTermination and allow the EC2 instance to continue running for reuse
-    @Parameter(property = "ec2.keep.alive", defaultValue="false")
-    private boolean ec2KeepAlive = false;
-
-    @Parameter(property = "ec2.end.point", defaultValue="https://ec2.us-east-1.amazonaws.com")
-    private String ec2EndPoint;
-
-    @Parameter(property = "ec2.tag.name", defaultValue = "Name")
-    private String ec2TagName;
-
-    @Parameter(property = "ec2.tag.value", defaultValue = "Gatling Load Generator")
-    private String ec2TagValue;
 
     @Parameter(property = "ssh.private.key", defaultValue = "${user.home}/gatling-private-key.pem")
     private File sshPrivateKey;
@@ -139,46 +95,58 @@ public class GatlingAwsMojo extends AbstractMojo {
     @Parameter(property = "prefer.private.ip.hostnames", defaultValue = "false")
     private boolean preferPrivateIpHostnames;
 
-    public void execute() throws MojoExecutionException {
-        AwsGatlingRunner runner = new AwsGatlingRunner(ec2EndPoint);
-        runner.setInstanceTag(new Tag(ec2TagName, ec2TagValue));
+    /**
+     * When true, this will run Gatling detached, and disconnect from SSH while Gatling is running.  Leaves a
+     *    file called 'gatling.pid' with the pid of the java process in it.
+     * ec2.keep.alive ignored when set to true
+     * ec2.force.termination ignored when set to true
+     * All output turned off
+     */
+    @Parameter(property = "ec2.execute.detached", defaultValue = "false")
+    private boolean ec2ExecuteDetached = false;
 
-        Map<String, Instance> instances = ec2SecurityGroupId != null
-                ? runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroupId, ec2SubnetId, ec2AmiId)
-                : runner.launchEC2Instances(instanceType, instanceCount, ec2KeyPairName, ec2SecurityGroup, ec2AmiId);
-        ConcurrentHashMap<String, Integer> completedHosts = new ConcurrentHashMap<String, Integer>();
+
+    public void execute() throws MojoExecutionException {
+        final AwsGatlingRunner runner = new AwsGatlingRunner(this.ec2EndPoint);
+        runner.setInstanceTag(new Tag(this.ec2TagName, this.ec2TagValue));
+
+        final Map<String, Instance> instances = this.ec2SecurityGroupId != null
+                ? runner.launchEC2Instances(this.instanceType, this.instanceCount, this.ec2KeyPairName, this.ec2SecurityGroupId, this.ec2SubnetId, this.ec2AmiId, true)
+                : runner.launchEC2Instances(this.instanceType, this.instanceCount, this.ec2KeyPairName, this.ec2SecurityGroup, this.ec2AmiId, true);
+        final ConcurrentHashMap<String, Integer> completedHosts = new ConcurrentHashMap<>();
 
         // launch all tests in parallel
-        ExecutorService executor = Executors.newFixedThreadPool(instanceCount);
+        final ExecutorService executor = Executors.newFixedThreadPool(this.instanceCount);
 
-        long timeStamp = System.currentTimeMillis();
-        testName = testName.equals("") ? gatlingSimulation.toLowerCase() + "-" + timeStamp : testName + "-" + timeStamp;
-        File resultsDir = new File(gatlingLocalResultsDir, testName);
-        boolean success = resultsDir.mkdirs();
+        final long timeStamp = System.currentTimeMillis();
+        this.testName = this.testName.equals("") ? this.gatlingSimulation.toLowerCase() + "-" + timeStamp : this.testName + "-" + timeStamp;
+        final File resultsDir = new File(this.gatlingLocalResultsDir, this.testName);
+        final boolean success = resultsDir.mkdirs();
         System.out.format("created result dir %s: %s%n", resultsDir.getAbsolutePath(), success);
 
-        Collection<Instance> values = instances.values();
+        final Collection<Instance> values = instances.values();
         int numInstance = 0;
-        for (Instance instance : values) {
-            String host = getPreferredHostName(instance);
-            Runnable worker = new AwsGatlingExecutor(
+        for (final Instance instance : values) {
+            final String host = this.getPreferredHostName(instance);
+            final Runnable worker = new AwsGatlingExecutor(
                     host,
-                    sshUser,
-                    sshPrivateKey,
-                    testName,
-                    installScript,
-                    gatlingSourceDir,
-                    gatlingSimulation,
-                    simulationConfig,
-                    gatlingResourcesDir,
-                    gatlingLocalResultsDir,
-                    files,
+                    this.sshUser,
+                    this.sshPrivateKey,
+                    this.testName,
+                    this.installScript,
+                    this.gatlingSourceDir,
+                    this.gatlingSimulation,
+                    this.simulationConfig,
+                    this.gatlingResourcesDir,
+                    this.gatlingLocalResultsDir,
+                    this.files,
                     numInstance++,
-                    instanceCount,
+                    this.instanceCount,
                     completedHosts,
-                    gatlingRoot,
-                    gatlingJavaOpts,
-                    debugOutputEnabled);
+                    this.gatlingRoot,
+                    this.gatlingJavaOpts,
+                    this.debugOutputEnabled,
+                    this.ec2ExecuteDetached);
             executor.execute(worker);
         }
         executor.shutdown();
@@ -186,76 +154,84 @@ public class GatlingAwsMojo extends AbstractMojo {
         while (!executor.isTerminated()) {
             try {
                 Thread.sleep(SLEEP_TIME_TERMINATION_MS);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
             }
         }
         System.out.println("Finished all threads");
 
-        int failedInstancesCount = listFailedInstances(instances, completedHosts);
+        final int failedInstancesCount = this.listFailedInstances(instances, completedHosts);
 
         // If the ec2KeepAlive value is true then we need to skip terminating.
-        if ((failedInstancesCount == 0 || ec2ForceTermination) && !ec2KeepAlive) {
+        if ((failedInstancesCount == 0 || this.ec2ForceTermination) && !this.ec2KeepAlive && !this.ec2ExecuteDetached) {
             runner.terminateInstances(instances.keySet());
-        } else if (ec2KeepAlive) {
+        } else if (this.ec2KeepAlive) {
             // Send a message out stating the machines are still running
             System.out.println("EC2 instances are still running for the next load test");
+        } else if (this.ec2ExecuteDetached) {
+            System.out.println("EC2 instances are running detached");
         }
 
-        // Build report
-        String reportCommand = String.format("%s -ro %s/%s", gatlingLocalHome, gatlingLocalResultsDir, testName);
-        System.out.format("Report command: %s%n", reportCommand);
-        System.out.println(executeCommand(reportCommand));
+        if (!this.ec2ExecuteDetached) {
+            // Build report
+            final String reportCommand = String.format("%s -ro %s/%s", this.gatlingLocalHome, this.gatlingLocalResultsDir, this.testName);
+            System.out.format("Report command: %s%n", reportCommand);
+            System.out.println(this.executeCommand(reportCommand));
 
-        // Upload report to S3
-        if (s3UploadEnabled) {
-            System.out.format("Trying to upload simulation to S3 location %s/%s/%s%n", s3Bucket, s3Subfolder, testName);
-            runner.uploadToS3(s3Bucket, s3Subfolder + "/" + testName, new File(gatlingLocalResultsDir + File.separator + testName));
+            // Upload report to S3
+            if (this.s3UploadEnabled) {
+                System.out.format("Trying to upload simulation to S3 location %s/%s/%s%n", this.s3Bucket, this.s3Subfolder,
+                        this.testName);
+                runner.uploadToS3(this.s3Bucket, this.s3Subfolder + "/" + this.testName,
+                        new File(this.gatlingLocalResultsDir + File.separator + this.testName));
 
-            final String url = getS3Url();
-            System.out.format("Results are on %s%n", url);
+                final String url = this.getS3Url();
+                System.out.format("Results are on %s%n", url);
 
-            try {
-                // Write the results URL into a file. This provides the URL to external tools which might want to link to the results.
-                FileUtils.fileWrite("results.txt", url);
-            } catch (IOException e){
-                System.err.println("Can't write result address: " + e);
+                try {
+                    // Write the results URL into a file. This provides the URL to external tools which might want to link to the results.
+                    FileUtils.fileWrite("results.txt", url);
+                } catch (final IOException e) {
+                    System.err.println("Can't write result address: " + e);
+                }
+            } else {
+                System.out.println("Skipping upload to S3.");
             }
         } else {
-            System.out.println("Skipping upload to S3.");
+            System.out.println("Running detached, no reports available.");
         }
 
-        if (propagateGatlingFailure && failedInstancesCount > 0) {
+        if (this.propagateGatlingFailure && failedInstancesCount > 0) {
             throw new MojoExecutionException("Some gatling simulation failed: " + failedInstancesCount);
         }
     }
 
     private String getS3Url() {
-        if ("us-east-1".equalsIgnoreCase(s3Region)) {
+        if ("us-east-1".equalsIgnoreCase(this.s3Region)) {
             // us-east-1 has no prefix - http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
-            return String.format("https://s3.amazonaws.com/%s/%s/%s/index.html", s3Bucket, s3Subfolder, testName);
+            return String.format("https://s3.amazonaws.com/%s/%s/%s/index.html", this.s3Bucket, this.s3Subfolder, this.testName);
         }
-        return String.format("https://s3-%s.amazonaws.com/%s/%s/%s/index.html", s3Region, s3Bucket, s3Subfolder, testName);
+        return String.format("https://s3-%s.amazonaws.com/%s/%s/%s/index.html", this.s3Region, this.s3Bucket, this.s3Subfolder, this.testName);
     }
 
-    private String executeCommand(String command) {
-        StringBuffer output = new StringBuffer();
+    private String executeCommand(final String command) {
+        final StringBuffer output = new StringBuffer();
 
         try {
-            Process process = Runtime.getRuntime().exec(command);
-            int exitCode = process.waitFor();
+            final Process process = Runtime.getRuntime().exec(command);
+            final int exitCode = process.waitFor();
             SshClient.printExitCode(exitCode);
 
-            output.append(read(new BufferedReader(new InputStreamReader(process.getInputStream()))));
-            output.append(read(new BufferedReader(new InputStreamReader(process.getErrorStream()))));
-        } catch (Exception e) {
+            output.append(this.read(new BufferedReader(new InputStreamReader(process.getInputStream()))));
+            output.append(this.read(new BufferedReader(new InputStreamReader(process.getErrorStream()))));
+        } catch (final Exception e) {
             e.printStackTrace();
         }
 
         return output.toString();
     }
 
-    private StringBuffer read(BufferedReader reader) throws IOException {
-        StringBuffer output = new StringBuffer();
+    private StringBuffer read(final BufferedReader reader) throws IOException {
+        final StringBuffer output = new StringBuffer();
         String line;
 
         while ((line = reader.readLine()) != null) {
@@ -266,11 +242,11 @@ public class GatlingAwsMojo extends AbstractMojo {
         return output;
     }
 
-    private int listFailedInstances(Map<String, Instance> instances, ConcurrentHashMap<String, Integer> completedHosts) {
+    private int listFailedInstances(final Map<String, Instance> instances, final ConcurrentHashMap<String, Integer> completedHosts) {
         int failedInstancesCount = instances.size() - completedHosts.size();
 
-        for (Instance instance : instances.values()) {
-            String host = getPreferredHostName(instance);
+        for (final Instance instance : instances.values()) {
+            final String host = this.getPreferredHostName(instance);
 
             if (!completedHosts.containsKey(host)) {
                 System.out.format("No result collected from hostname: %s%n", host);
@@ -285,8 +261,8 @@ public class GatlingAwsMojo extends AbstractMojo {
         return failedInstancesCount;
     }
 
-    private String getPreferredHostName(Instance instance) {
-        if (preferPrivateIpHostnames) {
+    private String getPreferredHostName(final Instance instance) {
+        if (this.preferPrivateIpHostnames) {
             return instance.getPrivateIpAddress();
         }
 

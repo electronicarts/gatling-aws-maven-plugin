@@ -34,27 +34,26 @@ public class AwsGatlingRunner {
                 new SystemPropertiesCredentialsProvider(),
                 new ProfileCredentialsProvider(),
                 new InstanceProfileCredentialsProvider());
-        ec2client = new AmazonEC2Client(credentials);
-        ec2client.setEndpoint(endpoint);
-        transferManager = new TransferManager(credentials);
+        this.ec2client = new AmazonEC2Client(credentials);
+        this.ec2client.setEndpoint(endpoint);
+        this.transferManager = new TransferManager(credentials);
     }
 
-    public Map<String, Instance> launchEC2Instances(final String instanceType, final int instanceCount, final String ec2KeyPairName, final String ec2SecurityGroup, final String amiId) {
-        System.out.println(String.format("Did not find any existing instances, starting new ones with security group: '%s'", ec2SecurityGroup));
-        return launchEC2Instances(instanceType,
+    public Map<String, Instance> launchEC2Instances(final String instanceType, final int instanceCount, final String ec2KeyPairName, final String ec2SecurityGroup, final String amiId, final boolean createIfNonExistent) {
+        return this.launchEC2Instances(instanceType,
                 () -> new RunInstancesRequest()
                         .withImageId(amiId)
                         .withInstanceType(instanceType)
                         .withMinCount(instanceCount)
                         .withMaxCount(instanceCount)
                         .withKeyName(ec2KeyPairName)
-                        .withSecurityGroups(ec2SecurityGroup)
+                        .withSecurityGroups(ec2SecurityGroup),
+                createIfNonExistent
         );
     }
 
-    public Map<String, Instance> launchEC2Instances(final String instanceType, final int instanceCount, final String ec2KeyPairName, final String ec2SecurityGroupId, final String ec2SubnetId, final String amiId) {
-        System.out.println(String.format("Did not find any existing instances, starting new ones with security group id: '%s' and subnet: '%s'", ec2SecurityGroupId, ec2SubnetId));
-        return launchEC2Instances(instanceType,
+    public Map<String, Instance> launchEC2Instances(final String instanceType, final int instanceCount, final String ec2KeyPairName, final String ec2SecurityGroupId, final String ec2SubnetId, final String amiId, final boolean createIfNonExistent) {
+        return this.launchEC2Instances(instanceType,
                 () -> new RunInstancesRequest()
                         .withImageId(amiId)
                         .withInstanceType(instanceType)
@@ -62,57 +61,68 @@ public class AwsGatlingRunner {
                         .withMaxCount(instanceCount)
                         .withKeyName(ec2KeyPairName)
                         .withSecurityGroupIds(ec2SecurityGroupId)
-                        .withSubnetId(ec2SubnetId)
+                        .withSubnetId(ec2SubnetId),
+                createIfNonExistent
         );
     }
 
-    private Map<String, Instance> launchEC2Instances(String instanceType, RunInstancesRequestBuilder runInstancesRequestBuilder) {
-        Map<String, Instance> instances = new HashMap<>();
+    public Map<String, Instance> findExistingInstances(final String instanceType) {
+        final Map<String, Instance> instances = new HashMap<>();
 
-        DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest()
-                .withFilters(getInstanceFilters(instanceType)));
+        final DescribeInstancesResult describeInstancesResult = this.ec2client.describeInstances(new DescribeInstancesRequest()
+                .withFilters(this.getInstanceFilters(instanceType)));
 
         // Check for existing EC2 instances that fit the filter criteria and use those.
-        for (Reservation reservation : describeInstancesResult.getReservations()) {
-            for (Instance instance : reservation.getInstances()) {
+        for (final Reservation reservation : describeInstancesResult.getReservations()) {
+            for (final Instance instance : reservation.getInstances()) {
                 // If we found any existing EC2 instances put them into the instances variable.
                 System.out.format("Reservations %s (%s): %s%n", instance.getInstanceId(), instance.getState().getName(), instance.getSecurityGroups().get(0).getGroupName());
                 instances.put(instance.getInstanceId(), instance);
             }
         }
 
-        // If instances is empty, that means we did not find any to reuse so let's create them
-        if (instances.isEmpty()) {
-            RunInstancesResult runInstancesResult = ec2client.runInstances(runInstancesRequestBuilder.build());
+        return instances;
+    }
 
-            for (Instance instance : runInstancesResult.getReservation().getInstances()) {
+    private Map<String, Instance> launchEC2Instances(final String instanceType, final RunInstancesRequestBuilder runInstancesRequestBuilder, final boolean createIfNonExistent) {
+        final Map<String, Instance> instances = this.findExistingInstances(instanceType);
+
+        // If instances is empty, that means we did not find any to reuse so let's create them
+        if (instances.isEmpty() && createIfNonExistent) {
+            final RunInstancesRequest request = runInstancesRequestBuilder.build();
+            System.out.println(String.format(
+                    "Did not find any existing instances, starting new ones with security group: '%s' and subnet: '%s'",
+                    request.getSecurityGroups().get(0), request.getSubnetId() == null ? "" : request.getSubnetId()));
+            final RunInstancesResult runInstancesResult = this.ec2client.runInstances(request);
+
+            for (final Instance instance : runInstancesResult.getReservation().getInstances()) {
                 System.out.println(instance.getInstanceId() + " launched");
                 instances.put(instance.getInstanceId(), instance);
             }
 
             // Tag instances on creation. Adding the tag enables us to ensure we are terminating a load generator instance.
-            ec2client.createTags(new CreateTagsRequest()
+            this.ec2client.createTags(new CreateTagsRequest()
                     .withResources(instances.keySet())
-                    .withTags(instanceTag));
+                    .withTags(this.instanceTag));
 
-            DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(instances.keySet());
+            final DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(instances.keySet());
 
-            startAllInstances(instances, describeInstancesRequest);
+            this.startAllInstances(instances, describeInstancesRequest);
         }
 
         return instances;
     }
 
-    private void startAllInstances(Map<String, Instance> instances, DescribeInstancesRequest describeInstancesRequest) {
+    private void startAllInstances(final Map<String, Instance> instances, final DescribeInstancesRequest describeInstancesRequest) {
         boolean allStarted = false;
         DescribeInstancesResult describeInstancesResult;
 
         while (!allStarted) {
             sleep(INSTANCE_STATUS_SLEEP_MS);
             allStarted = true;
-            describeInstancesResult = ec2client.describeInstances(describeInstancesRequest);
-            for (Reservation reservation : describeInstancesResult.getReservations()) {
-                for (Instance instance : reservation.getInstances()) {
+            describeInstancesResult = this.ec2client.describeInstances(describeInstancesRequest);
+            for (final Reservation reservation : describeInstancesResult.getReservations()) {
+                for (final Instance instance : reservation.getInstances()) {
                     System.out.format("%s %s%n", instance.getInstanceId(), instance.getState().getName());
                     if (!instance.getState().getName().equals("running")) {
                         allStarted = false;
@@ -122,13 +132,13 @@ public class AwsGatlingRunner {
                 }
             }
 
-            DescribeInstanceStatusRequest describeInstanceStatusRequest = new DescribeInstanceStatusRequest().withInstanceIds(instances.keySet());
+            final DescribeInstanceStatusRequest describeInstanceStatusRequest = new DescribeInstanceStatusRequest().withInstanceIds(instances.keySet());
             boolean allInitialized = false;
             while (!allInitialized) {
                 sleep(INSTANCE_STATUS_SLEEP_MS);
-                DescribeInstanceStatusResult describeInstanceStatus = ec2client.describeInstanceStatus(describeInstanceStatusRequest);
+                final DescribeInstanceStatusResult describeInstanceStatus = this.ec2client.describeInstanceStatus(describeInstanceStatusRequest);
                 allInitialized = true;
-                for (InstanceStatus instanceStatus : describeInstanceStatus.getInstanceStatuses()) {
+                for (final InstanceStatus instanceStatus : describeInstanceStatus.getInstanceStatuses()) {
                     System.out.format("%s %s%n", instanceStatus.getInstanceId(), instanceStatus.getInstanceStatus().getStatus());
                     if (!instanceStatus.getInstanceStatus().getStatus().equals("ok")) {
                         allInitialized = false;
@@ -138,21 +148,21 @@ public class AwsGatlingRunner {
         }
     }
 
-    private Filter[] getInstanceFilters(String instanceType) {
+    private Filter[] getInstanceFilters(final String instanceType) {
         // Setup a filter to find any previously generated EC2 instances.
         return new Filter[]{
-            new Filter("tag:" + instanceTag.getKey()).withValues(instanceTag.getValue()),
+            new Filter("tag:" + this.instanceTag.getKey()).withValues(this.instanceTag.getValue()),
             new Filter("instance-state-name").withValues("running"),
             new Filter("instance-type").withValues(instanceType)
         };
     }
 
-    public void terminateInstances(Collection<String> instanceIds) {
-        DescribeInstancesResult describeInstancesResult = ec2client.describeInstances(new DescribeInstancesRequest().withInstanceIds(instanceIds));
+    public void terminateInstances(final Collection<String> instanceIds) {
+        final DescribeInstancesResult describeInstancesResult = this.ec2client.describeInstances(new DescribeInstancesRequest().withInstanceIds(instanceIds));
 
-        for (Reservation reservation : describeInstancesResult.getReservations()) {
-            for (Instance instance : reservation.getInstances()) {
-                if (!hasTag(instance, instanceTag)) {
+        for (final Reservation reservation : describeInstancesResult.getReservations()) {
+            for (final Instance instance : reservation.getInstances()) {
+                if (!this.hasTag(instance, this.instanceTag)) {
                     System.out.format("Aborting since instance %s does not look like a gatling load generator.%n", instance.getInstanceId());
                     return;
                 }
@@ -161,27 +171,27 @@ public class AwsGatlingRunner {
         }
 
         System.out.println("Terminating " + instanceIds);
-        ec2client.terminateInstances(new TerminateInstancesRequest(new ArrayList<String>(instanceIds)));
+        this.ec2client.terminateInstances(new TerminateInstancesRequest(new ArrayList<String>(instanceIds)));
     }
 
-    public void uploadToS3(String s3bucket, String targetDirectory, File sourceDirectory) {
+    public void uploadToS3(final String s3bucket, final String targetDirectory, final File sourceDirectory) {
         // Recursively upload sourceDirectory to targetDirectory.
         FOR: for (final File file : sourceDirectory.listFiles()) {
             if (file.isDirectory()) {
-                uploadToS3(s3bucket, targetDirectory + "/" + file.getName(), file);
+                this.uploadToS3(s3bucket, targetDirectory + "/" + file.getName(), file);
             } else if (file.isFile()) {
                 final String path = file.getAbsolutePath();
                 final long uploadStartTimeMs = System.currentTimeMillis();
                 final PutObjectRequest putRequest = new PutObjectRequest(s3bucket, targetDirectory + "/" + file.getName(), file)
                         .withCannedAcl(CannedAccessControlList.PublicRead);
 
-                final Upload upload = transferManager.upload(putRequest);
+                final Upload upload = this.transferManager.upload(putRequest);
                 int statusChecks = 0;
 
                 System.out.println("Uploading " + path);
 
                 while (!upload.isDone()) {
-                    if (uploadTimedOut(uploadStartTimeMs)) {
+                    if (this.uploadTimedOut(uploadStartTimeMs)) {
                         System.err.format("Timed out uploading file to S3 (%s). Will skip file. Report might be incomplete.%n", path);
                         continue FOR;
                     }
@@ -193,7 +203,7 @@ public class AwsGatlingRunner {
                 }
                 try {
                     upload.waitForCompletion();
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     System.out.format("Failed to upload to S3 %s/%s/%s%n", s3bucket, targetDirectory, file.getName());
                     e.printStackTrace();
                 }
@@ -209,8 +219,8 @@ public class AwsGatlingRunner {
         return totalUploadTimeMs > S3_UPLOAD_TIMEOUT_MS;
     }
 
-    private boolean hasTag(Instance instance, Tag theTag) {
-        for (Tag tag : instance.getTags()) {
+    private boolean hasTag(final Instance instance, final Tag theTag) {
+        for (final Tag tag : instance.getTags()) {
             if (tag.equals(theTag)) {
                 return true;
             }
@@ -223,10 +233,10 @@ public class AwsGatlingRunner {
         this.instanceTag = instanceTag;
     }
 
-    private void sleep(long timeMs) {
+    private void sleep(final long timeMs) {
         try {
             Thread.sleep(timeMs);
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
         }
     }
 
