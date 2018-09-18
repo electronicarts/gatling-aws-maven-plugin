@@ -119,7 +119,8 @@ public class AwsGatlingExecutor implements Runnable {
         // start test
         // TODO add parameters for test name and description
         final String coreCommand = String.format("%s %s/bin/gatling.sh -s %s -on %s -rd test -nr -rf results/%s", this.getJavaOpts(), this.gatlingRoot, this.gatlingSimulation, this.testName, this.testName);
-        final String command = String.format("%s%s%s", (this.runDetached ? "nohup sh -c '" : ""), coreCommand, (this.runDetached ? "' &> /dev/null &" : ""));
+        // On CentOS, the CLOSE signal is sent prior to completion of the startup of the nohup.  The sleep call needs the return value of the &, and so causes the wait.  We don't need to sleep, but we do need to guarantee process creation.
+        final String command = String.format("%s%s%s", (this.runDetached ? "nohup sh -c '" : ""), coreCommand, (this.runDetached ? "' > /dev/null 2>&1 & sleep 0" : ""));
         final int resultCode = SshClient.executeCommand(hostInfo, command, this.debugOutputEnabled);
 
         if (!this.runDetached) {
