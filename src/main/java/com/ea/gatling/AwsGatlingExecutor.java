@@ -33,8 +33,10 @@ public class AwsGatlingExecutor implements Runnable {
     private final String inheritedGatlingJavaOpts;
     private final boolean debugOutputEnabled;
     private final boolean runDetached;
+    private final String remoteLogfile;
+    private final boolean getRemoteLogFile;
 
-    public AwsGatlingExecutor(final String host,final String sshUser, final File sshPrivateKey, final String testName, final File installScript, final File gatlingSourceDir, final String gatlingSimulation, final File simulationConfig, final File gatlingResourcesDir, final File gatlingLocalResultsDir, final List<String> additionalFiles, final int numInstance, final int instanceCount, final ConcurrentHashMap<String, Integer> completedHosts, final String gatlingRoot, final String inheritedGatlingJavaOpts, final boolean debugOutputEnabled, final boolean runDetached) {
+    public AwsGatlingExecutor(final String host,final String sshUser, final File sshPrivateKey, final String testName, final File installScript, final File gatlingSourceDir, final String gatlingSimulation, final File simulationConfig, final File gatlingResourcesDir, final File gatlingLocalResultsDir, final List<String> additionalFiles, final int numInstance, final int instanceCount, final ConcurrentHashMap<String, Integer> completedHosts, final String gatlingRoot, final String inheritedGatlingJavaOpts, final boolean debugOutputEnabled, final boolean runDetached, final boolean getRemoteLogFile, final String remoteLogFile) {
         this.host = host;
         this.sshUser = sshUser;
         this.sshPrivateKey = sshPrivateKey.getAbsolutePath();
@@ -53,6 +55,8 @@ public class AwsGatlingExecutor implements Runnable {
         this.inheritedGatlingJavaOpts = inheritedGatlingJavaOpts;
         this.debugOutputEnabled = debugOutputEnabled;
         this.runDetached = runDetached;
+        this.remoteLogfile = remoteLogFile;
+        this.getRemoteLogFile = getRemoteLogFile;
     }
 
     public void runGatlingTest() throws IOException {
@@ -131,6 +135,11 @@ public class AwsGatlingExecutor implements Runnable {
                     this.debugOutputEnabled);
             SshClient.scpDownload(hostInfo, new SshClient.FromTo("simulation.log",
                     String.format("%s/%s/simulation-%s.log", this.gatlingLocalResultsDir.getAbsolutePath(), this.testName, this.host)));
+            if(this.getRemoteLogFile) {
+                this.log("Downloading remote log");
+                SshClient.scpDownload(hostInfo, new SshClient.FromTo(remoteLogfile,
+                        String.format("%s/%s/remote-log-%s.log", this.gatlingLocalResultsDir.getAbsolutePath(), this.testName, this.host)));
+            }
         }
 
         return resultCode;

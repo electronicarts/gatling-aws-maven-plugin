@@ -62,6 +62,12 @@ public class GatlingAwsMojo extends BaseAwsMojo {
     @Parameter(property = "gatling.local.results", defaultValue = "${project.build.directory}/gatling/results")
     private File gatlingLocalResultsDir;
 
+    @Parameter(property = "gatling.remote.log", defaultValue = "gatling-charts-highcharts-bundle-2.1.4/target/logs/logfile.txt")
+    private String gatlingRemoteLog;
+
+    @Parameter(property = "gatling.remote.download", defaultValue = "false")
+    private boolean downloadRemoteLog;
+
     @Parameter(property = "gatling.local.home", defaultValue = "${user.home}/gatling/gatling-charts-highcharts-bundle-2.1.4/bin/gatling.sh")
     private String gatlingLocalHome;
 
@@ -94,6 +100,7 @@ public class GatlingAwsMojo extends BaseAwsMojo {
 
     @Parameter(property = "prefer.private.ip.hostnames", defaultValue = "false")
     private boolean preferPrivateIpHostnames;
+
 
     /**
      * When true, this will run Gatling detached, and disconnect from SSH while Gatling is running.  Leaves a
@@ -146,7 +153,9 @@ public class GatlingAwsMojo extends BaseAwsMojo {
                     this.gatlingRoot,
                     this.gatlingJavaOpts,
                     this.debugOutputEnabled,
-                    this.ec2ExecuteDetached);
+                    this.ec2ExecuteDetached,
+                    this.downloadRemoteLog,
+                    this.gatlingRemoteLog);
             executor.execute(worker);
         }
         executor.shutdown();
