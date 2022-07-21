@@ -124,7 +124,7 @@ rm -rf gatling-charts-highcharts-bundle-${GATLING_VERSION}/user-files/simulation
   </properties>
 ```
 
-5. Add the following two dependencies:
+5. Add the following dependencies:
 
 ```xml
   <dependencies>

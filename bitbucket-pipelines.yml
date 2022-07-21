@@ -1,0 +1,18 @@
+image: maven:3.3.9
+pipelines:
+  default:
+    - step:
+        caches:
+          - maven
+        script:
+          - mvn -B verify
+  tags:
+    v*:
+      - step:
+          caches:
+            - maven
+          script:
+            - bash configure-maven.sh
+            - VERSION=$(echo "$BITBUCKET_TAG" | sed -e 's/^v//')
+            - mvn versions:set -DnewVersion=$VERSION
+            - mvn deploy

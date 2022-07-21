@@ -3,7 +3,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>gatling-aws-maven-plugin</artifactId>
-    <groupId>com.ea.gatling</groupId>
+    <groupId>com.fr</groupId>
     <version>1.0.18-SNAPSHOT</version>
     <name>Gatling AWS Maven Plugin</name>
     <description>The Gatling AWS Maven plugin takes the pain out of scaling up your Gatling tests. It runs your load test on a configurable number of EC2 instances, aggregates a single load test report, and uploads the results to S3. All EC2 instances are terminated at the end of the test to ensure you are only paying for what you need.</description>
@@ -95,21 +95,26 @@
                 </configuration>
             </plugin>
         </plugins>
+        <extensions>
+            <extension>
+                <groupId>org.kuali.maven.wagons</groupId>
+                <artifactId>maven-s3-wagon</artifactId>
+                <version>1.2.1</version>
+            </extension>
+        </extensions>
     </build>
     <profiles>
         <profile>
             <id>release</id>
             <distributionManagement>
-                <snapshotRepository>
-                    <id>deployment</id>
-                    <name>Snapshots</name>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                </snapshotRepository>
                 <repository>
-                    <id>deployment</id>
-                    <name>Staging</name>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+                    <id>fr-maven-release</id>
+                    <url>s3://maven.flexreceipts.com/release</url>
                 </repository>
+                <snapshotRepository>
+                    <id>fr-maven-snapshot</id>
+                    <url>s3://maven.flexreceipts.com/snapshot</url>
+                </snapshotRepository>
             </distributionManagement>
             <build>
                 <plugins>
